@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project Mercury 3.0</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzEgMzQwIj4KICA8cGF0aCBmaWxsPSIjMTI2YjM5IiBkPSJNMjU4LjUyLDE0OC44N2MtLjYyLTEuNC0xLjIzLTIuOC0xLjkxLTQuMTItLjA1LS4xNC0uMTctLjMxLS4yLS40MS0zLjg5LTcuOTMtOC41NC0xNS40MS0xMy44NC0yMi4zOS0uMTktLjE0LS4yNS0uMzEtLjM2LS40OEMxNzcuMSwzNS40OCwxNzMuNzksMzAuODIsMTY5LDBjMCwwLTgxLjI4LDQ3Ljg5LTEzMS4xLDExMC4wNi0xNi4xMiwxNi43LTI3LjkxLDM3LjQtMzMuOCw2MC41OEMxLjMxLDE4MC4yNS0uMiwxODkuOTUuMDIsMTk5LjYzaC4wNWMwLDEuNC0uMDUsMi44MS0uMDUsNC4yQy4wMiwyNzguNDMsNjAuNDYsMzM4Ljk1LDEzNS4wNywzMzguOTVzMTM1LjE2LTYwLjUyLDEzNS4xNi0xMzUuMTFjMCwwLDIuMTMtMjQuNDMtMTEuNzEtNTQuOTdaIi8+CiAgICAgICAgPHBhdGggZmlsbD0iI2Y2ZWMzMSIgZD0iTTE3MS40OSw5NS42M3Y3My40OWgtNzEuODR2LTczLjg2Yy00Ni4xOCwxNC45LTc5LjUyLDU4LjI1LTc5LjUyLDEwOS40MXMzMy4zNCw5NC40OCw3OS41MiwxMDkuNDJ2LTczLjE2aDcxLjg0djcyLjg1YzQ1LjY3LTE1LjI1LDc4LjY1LTU4LjMsNzguNjUtMTA5LjExcy0zMi45OC05My44OS03OC42NS0xMDkuMDRaIi8+Cjwvc3ZnPg==" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background:#F6F3EA; }
+  @keyframes flagFlash {
+    0%, 100% { background-color: rgba(255,255,255,0.1); }
+    50% { background-color: #FEC47F; }
+  }
+  .flag-flash { animation: flagFlash 1.1s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+
+const FONT_SERIF = { fontFamily: "'Playfair Display', serif" };
+const FONT_MONO = { fontFamily: "'IBM Plex Mono', monospace" };
+const FONT_BODY = { fontFamily: "'Work Sans', sans-serif" };
+
+const LOGO_SRC = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMiIgZGF0YS1uYW1lPSJMYXllciAyIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjk0LjM1IDM5Ny45NyI+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogIzEyNmIzOTsKICAgICAgfQoKICAgICAgLmNscy0yIHsKICAgICAgICBmaWxsOiAjZjZlYzMxOwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8ZyBpZD0iTGF5ZXJfMS0yIiBkYXRhLW5hbWU9IkxheWVyIDEiPgogICAgPGc+CiAgICAgIDxnPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI1OC41MiwxNDguODdjLS42Mi0xLjQtMS4yMy0yLjgtMS45MS00LjEyLS4wNS0uMTQtLjE3LS4zMS0uMi0uNDEtMy44OS03LjkzLTguNTQtMTUuNDEtMTMuODQtMjIuMzktLjE5LS4xNC0uMjUtLjMxLS4zNi0uNDhDMTc3LjEsMzUuNDgsMTczLjc5LDMwLjgyLDE2OSwwYzAsMC04MS4yOCw0Ny44OS0xMzEuMSwxMTAuMDYtMTYuMTIsMTYuNy0yNy45MSwzNy40LTMzLjgsNjAuNThDMS4zMSwxODAuMjUtLjIsMTg5Ljk1LjAyLDE5OS42M2guMDVjMCwxLjQtLjA1LDIuODEtLjA1LDQuMkMuMDIsMjc4LjQzLDYwLjQ2LDMzOC45NSwxMzUuMDcsMzM4Ljk1czEzNS4xNi02MC41MiwxMzUuMTYtMTM1LjExYzAsMCwyLjEzLTI0LjQzLTExLjcxLTU0Ljk3WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE3MS40OSw5NS42M3Y3My40OWgtNzEuODR2LTczLjg2Yy00Ni4xOCwxNC45LTc5LjUyLDU4LjI1LTc5LjUyLDEwOS40MXMzMy4zNCw5NC40OCw3OS41MiwxMDkuNDJ2LTczLjE2aDcxLjg0djcyLjg1YzQ1LjY3LTE1LjI1LDc4LjY1LTU4LjMsNzguNjUtMTA5LjExcy0zMi45OC05My44OS03OC42NS0xMDkuMDRaIi8+CiAgICAgIDwvZz4KICAgICAgPGc+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOTEzLjQ3LDM0My44MWM0LjIyLDMuNTIsNi4zMyw4LjQsNi4zMywxNC42NXMtMi4xMSwxMS4wNS02LjMzLDE0LjU3Yy00LjIyLDMuNTItMTAuMDUsNS4yOC0xNy40OCw1LjI4aC0xNi44OXYxOS4zNGgtNC4zMXYtNTkuMWgyMS4xOWM3LjQzLDAsMTMuMjYsMS43NiwxNy40OCw1LjI4Wk05MTAuNDMsMzcwLjI4YzMuMzItMi43Niw0Ljk4LTYuNyw0Ljk4LTExLjgycy0xLjY2LTkuMDgtNC45OC0xMS44NmMtMy4zMi0yLjc5LTguMTMtNC4xOC0xNC40NC00LjE4aC0xNi44OXYzMmgxNi44OWM2LjMsMCwxMS4xMi0xLjM4LDE0LjQ0LTQuMTRaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOTg4LjI4LDMzOC41M2wtMjYuMzQsNTkuMWgtNC4zMWwtMjYuMzQtNTkuMWg0LjczbDIzLjksNTMuNTMsMjMuODktNTMuNTNoNC40OFoiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMDE3LjQxLDM0Mi40MmgtMjEuMjh2LTMuODhoNDYuODZ2My44OGgtMjEuMjh2NTUuMjJoLTQuMzF2LTU1LjIyWiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTEwNTMuOTIsMzk2LjkyYy0uNy0uNy0xLjA2LTEuNTYtMS4wNi0yLjU4cy4zNS0xLjg2LDEuMDYtMi41M2MuNy0uNjcsMS41My0xLjAxLDIuNDktMS4wMXMxLjc5LjM0LDIuNDksMS4wMWMuNy42OCwxLjA2LDEuNTIsMS4wNiwyLjUzcy0uMzUsMS44Ny0xLjA2LDIuNThjLS43MS43LTEuNTMsMS4wNi0yLjQ5LDEuMDZzLTEuNzktLjM1LTIuNDktMS4wNloiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMTExLjM4LDMzOC41M2g0LjMxdjU1LjIyaDM0LjAzdjMuODhoLTM4LjMzdi01OS4xWiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTExNzMuODYsMzQyLjQyaC0yMS4yOHYtMy44OGg0Ni44NnYzLjg4aC0yMS4yOHY1NS4yMmgtNC4zMXYtNTUuMjJaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTIxNy4zNSwzMzguNTNoMjMuMzljNi4xMywwLDExLjU4LDEuMjcsMTYuMzQsMy44LDQuNzYsMi41Myw4LjQ2LDYuMDQsMTEuMSwxMC41MSwyLjY1LDQuNDgsMy45Nyw5LjU2LDMuOTcsMTUuMjRzLTEuMzIsMTAuNzctMy45NywxNS4yNGMtMi42NSw0LjQ4LTYuMzUsNy45OC0xMS4xLDEwLjUxLTQuNzYsMi41My0xMC4yLDMuOC0xNi4zNCwzLjhoLTIzLjM5di01OS4xWk0xMjQwLjQsMzkzLjc1YzUuNDYsMCwxMC4yNy0xLjA4LDE0LjQ0LTMuMjUsNC4xNy0yLjE3LDcuMzctNS4xOSw5LjYzLTkuMDgsMi4yNS0zLjg4LDMuMzgtOC4zMywzLjM4LTEzLjM0cy0xLjEzLTkuNDYtMy4zOC0xMy4zNGMtMi4yNS0zLjg4LTUuNDYtNi45MS05LjYzLTkuMDgtNC4xNy0yLjE3LTguOTgtMy4yNS0xNC40NC0zLjI1aC0xOC43NHY1MS4zNGgxOC43NFoiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMjg4LjMxLDM5Ni45MmMtLjctLjctMS4wNi0xLjU2LTEuMDYtMi41OHMuMzUtMS44NiwxLjA2LTIuNTNjLjctLjY3LDEuNTMtMS4wMSwyLjQ5LTEuMDFzMS43OS4zNCwyLjQ5LDEuMDFjLjcuNjgsMS4wNiwxLjUyLDEuMDYsMi41M3MtLjM1LDEuODctMS4wNiwyLjU4Yy0uNzEuNy0xLjUzLDEuMDYtMi40OSwxLjA2cy0xLjc5LS4zNS0yLjQ5LTEuMDZaIi8+CiAgICAgIDwvZz4KICAgICAgPGc+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDQzLjI1LDUwLjkzdjExNy42NmgtMzMuMjh2LTQ1Ljg5aC00NS4zOXY0NS44OWgtMzMuMjhWNTAuOTNoMzMuMjh2NDQuMjFoNDUuMzl2LTQ0LjIxaDMzLjI4WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTU1Ni41NSwxNDUuNzNoLTQ5Ljc2bC05LjI1LDIyLjg2aC0zMy45NWw1MS45NC0xMTcuNjZoMzIuNzhsNTIuMTEsMTE3LjY2aC0zNC42M2wtOS4yNC0yMi44NlpNNTQ2LjgsMTIxLjE5bC0xNS4xMy0zNy42NS0xNS4xMywzNy42NWgzMC4yNloiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik02NjYuMTQsMTI1Ljg5bC0xMi40NCwxMy4yOHYyOS40MmgtMzIuOTVWNTAuOTNoMzIuOTV2NDguOTFsNDUuNTUtNDguOTFoMzYuNjRsLTQ4LjA3LDUyLjExLDUwLjYsNjUuNTZoLTM4LjY2bC0zMy42Mi00Mi43WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTgzMS4zOCwxNDUuNzNoLTQ5Ljc2bC05LjI0LDIyLjg2aC0zMy45Nmw1MS45NC0xMTcuNjZoMzIuNzhsNTIuMTEsMTE3LjY2aC0zNC42M2wtOS4yNS0yMi44NlpNODIxLjYzLDEyMS4xOWwtMTUuMTMtMzcuNjUtMTUuMTMsMzcuNjVoMzAuMjZaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOTE0Ljc2LDc3LjMxaC0zNi4xNHYtMjYuMzloMTA1LjM5djI2LjM5aC0zNS45N3Y5MS4yN2gtMzMuMjh2LTkxLjI3WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTExMTkuMzIsNTAuOTN2MTE3LjY2aC0zMy4yOHYtNDUuODloLTQ1LjM5djQ1Ljg5aC0zMy4yOFY1MC45M2gzMy4yOHY0NC4yMWg0NS4zOXYtNDQuMjFoMzMuMjhaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTIzMi42MiwxNDUuNzNoLTQ5Ljc2bC05LjI0LDIyLjg2aC0zMy45Nmw1MS45NC0xMTcuNjZoMzIuNzhsNTIuMTEsMTE3LjY2aC0zNC42M2wtOS4yNC0yMi44NlpNMTIyMi44NywxMjEuMTlsLTE1LjEzLTM3LjY1LTE1LjEzLDM3LjY1aDMwLjI2WiIvPgogICAgICAgIDxnPgogICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDM3LjU0LDMxNC41NGwtLjM0LTYyLjM2LTMwLjI2LDUwLjc2aC0xNC43OWwtMzAuMDktNDkuMDh2NjAuNjhoLTMwLjc2di0xMTcuNjdoMjcuNGw0MS4zNSw2Ny45MSw0MC4zNC02Ny45MWgyNy40bC4zNCwxMTcuNjdoLTMwLjU5WiIvPgogICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNTczLjE5LDI5MS42OGgtNDkuNzZsLTkuMjUsMjIuODZoLTMzLjk1bDUxLjk0LTExNy42N2gzMi43OGw1Mi4xMSwxMTcuNjdoLTM0LjYzbC05LjI0LTIyLjg2Wk01NjMuNDQsMjY3LjE0bC0xNS4xMy0zNy42NS0xNS4xMywzNy42NWgzMC4yNloiLz4KICAgICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTYyOS4xNiwxOTYuODhoMzMuMjh2OTEuMjdoNTYuMTR2MjYuMzloLTg5LjQzdi0xMTcuNjdaIi8+CiAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik03MzQuMzksMTk2Ljg4aDU1LjY0YzEyLjg5LDAsMjQuMzIsMi40MSwzNC4yOSw3LjIzLDkuOTcsNC44MiwxNy43LDExLjY2LDIzLjIsMjAuNTEsNS40OSw4Ljg1LDguMjQsMTkuMjIsOC4yNCwzMS4xcy0yLjc1LDIyLjI1LTguMjQsMzEuMWMtNS40OSw4Ljg1LTEzLjIyLDE1LjY5LTIzLjIsMjAuNTEtOS45Nyw0LjgyLTIxLjQxLDcuMjMtMzQuMjksNy4yM2gtNTUuNjR2LTExNy42N1pNNzg4LjY4LDI4Ny45OGMxMC4wOSwwLDE4LjE4LTIuODYsMjQuMjktOC41Nyw2LjExLTUuNzIsOS4xNi0xMy42Miw5LjE2LTIzLjdzLTMuMDUtMTcuOTktOS4xNi0yMy43Yy02LjExLTUuNzEtMTQuMi04LjU3LTI0LjI5LTguNTdoLTIxLjAxdjY0LjU1aDIxLjAxWiIvPgogICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODc1LjkyLDE5Ni44OGgzMy4yOHYxMTcuNjdoLTMzLjI4di0xMTcuNjdaIi8+CiAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMDU0LjYsMTk2Ljg4bC01MC40MywxMTcuNjdoLTMyLjc4bC01MC4yNi0xMTcuNjdoMzUuOTdsMzEuOTQsNzYuNjUsMzIuNjEtNzYuNjVoMzIuOTVaIi8+CiAgICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMTU4LjY1LDI4OC44MnYyNS43MmgtOTQuNDd2LTExNy42N2g5Mi4yOHYyNS43MmgtNTkuMzR2MTkuODRoNTIuMjh2MjQuODhoLTUyLjI4djIxLjUyaDYxLjUyWiIvPgogICAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTE5My40NCwzMTMuMzZjLTguOTctMi4zNS0xNi4yNS01LjQ5LTIxLjg1LTkuNDFsMTAuOTMtMjQuNTRjNS4yNywzLjQ3LDExLjM3LDYuMjgsMTguMzIsOC40LDYuOTUsMi4xMywxMy43OCwzLjE5LDIwLjUxLDMuMTksMTIuNzcsMCwxOS4xNi0zLjE5LDE5LjE2LTkuNTgsMC0zLjM2LTEuODItNS44NS01LjQ2LTcuNDgtMy42NC0xLjYyLTkuNS0zLjMzLTE3LjU3LTUuMTMtOC44NS0xLjktMTYuMjUtMy45NS0yMi4xOS02LjE0LTUuOTQtMi4xOS0xMS4wNC01LjY5LTE1LjMtMTAuNTEtNC4yNi00LjgyLTYuMzktMTEuMzItNi4zOS0xOS41LDAtNy4xNywxLjk2LTEzLjY0LDUuODgtMTkuNDEsMy45Mi01Ljc3LDkuNzctMTAuMzQsMTcuNTctMTMuNyw3Ljc5LTMuMzYsMTcuMzQtNS4wNCwyOC42Ni01LjA0LDcuNzMsMCwxNS4zNS44NywyMi44NiwyLjYxLDcuNTEsMS43NCwxNC4xMiw0LjI5LDE5Ljg0LDcuNjVsLTEwLjI1LDI0LjcxYy0xMS4yMS02LjA1LTIyLjA4LTkuMDgtMzIuNjEtOS4wOC02LjYxLDAtMTEuNDMuOTgtMTQuNDYsMi45NC0zLjAyLDEuOTYtNC41NCw0LjUxLTQuNTQsNy42NXMxLjc5LDUuNDksNS4zOCw3LjA2YzMuNTgsMS41Nyw5LjM2LDMuMTksMTcuMzEsNC44Nyw4Ljk2LDEuOTEsMTYuMzksMy45NSwyMi4yNyw2LjE0LDUuODgsMi4xOSwxMC45OCw1LjY2LDE1LjMsMTAuNDIsNC4zMSw0Ljc2LDYuNDcsMTEuMjQsNi40NywxOS40MSwwLDcuMDYtMS45NiwxMy40NS01Ljg4LDE5LjE2LTMuOTIsNS43Mi05LjgxLDEwLjI4LTE3LjY1LDEzLjctNy44NSwzLjQyLTE3LjM3LDUuMTMtMjguNTgsNS4xMy05LjUzLDAtMTguNzctMS4xOC0yNy43My0zLjUzWiIvPgogICAgICAgIDwvZz4KICAgICAgPC9nPgogICAgPC9nPgogIDwvZz4KPC9zdmc+";
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+
+/* Renders page 1 of a PDF file to a canvas, for both preview and OCR input. */
+async function pdfFirstPageToCanvas(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2 });
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+  return canvas;
+}
+/* For born-digital PDFs (i.e. not a scanned image), pulls the embedded text
+   layer directly and reconstructs it into visual reading-order lines by
+   grouping text runs with the same y-position. Far more reliable than OCR
+   when the PDF actually has real text in it. */
+async function pdfFirstPageTextLines(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const page = await pdf.getPage(1);
+  const content = await page.getTextContent();
+  const runs = content.items.filter(it => it.str && it.str.trim());
+  runs.sort((a, b) => (b.transform[5] - a.transform[5]) || (a.transform[4] - b.transform[4]));
+  const lines = [];
+  let currentY = null, current = [];
+  const TOL = 3;
+  for (const run of runs) {
+    const y = run.transform[5];
+    if (currentY === null || Math.abs(y - currentY) > TOL) {
+      if (current.length) lines.push(current.map(w => w.str).join(" "));
+      current = [run]; currentY = y;
+    } else {
+      current.push(run);
+    }
+  }
+  if (current.length) lines.push(current.map(w => w.str).join(" "));
+  return lines;
+}
+function readAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------- minimal inline icon set ---------- */
+const Icon = ({ path, size = 16, className = "", strokeWidth = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {path}
+  </svg>
+);
+const Truck = (p) => <Icon {...p} path={<>
+  <rect x="1" y="7" width="14" height="10" rx="1"/><path d="M15 10h3.5l3.5 3.5V17h-7z"/>
+  <circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/>
+</>} />;
+const Upload = (p) => <Icon {...p} path={<>
+  <path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+</>} />;
+const FileText = (p) => <Icon {...p} path={<>
+  <path d="M6 2h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h6M9 8h2"/>
+</>} />;
+const Calendar = (p) => <Icon {...p} path={<>
+  <rect x="3" y="5" width="18" height="16" rx="1"/><path d="M3 9h18M8 3v4M16 3v4"/>
+</>} />;
+const Clock = (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>} />;
+const MapPin = (p) => <Icon {...p} path={<>
+  <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/>
+</>} />;
+const AlertTriangle = (p) => <Icon {...p} path={<>
+  <path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>
+</>} />;
+const CheckCircle2 = (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L16 10"/></>} />;
+const XCircle = (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></>} />;
+const ChevronRight = (p) => <Icon {...p} path={<path d="M9 5l7 7-7 7"/>} />;
+const Package = (p) => <Icon {...p} path={<>
+  <path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/>
+</>} />;
+const ArchiveIcon = (p) => <Icon {...p} path={<>
+  <rect x="3" y="3" width="18" height="4" rx="1"/><path d="M4 7v12a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7"/><path d="M10 12h4"/>
+</>} />;
+const Plus = (p) => <Icon {...p} path={<path d="M12 5v14M5 12h14"/>} />;
+const X = (p) => <Icon {...p} path={<path d="M18 6 6 18M6 6l12 12"/>} />;
+const RotateCcw = (p) => <Icon {...p} path={<>
+  <path d="M3 11a9 9 0 1 1 2.6 6.3"/><path d="M3 4v7h7"/>
+</>} />;
+const Pencil = (p) => <Icon {...p} path={<>
+  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+</>} />;
+const MoreHorizontal = (p) => <Icon {...p} path={<>
+  <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+  <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+  <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+</>} />;
+const Flag = (p) => <Icon {...p} path={<>
+  <path d="M4 3v18"/><path d="M4 4h13l-2.5 4L17 12H4"/>
+</>} />;
+const LayoutGrid = (p) => <Icon {...p} path={<>
+  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+  <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+</>} />;
+
+/* ---------- data ---------- */
+const SHOPS = {
+  ATL: { name: "Atoll Hakatha", specialty: "Metal items" },
+  KSJ: { name: "Kaasinjee Hakatha", specialty: "Board items" },
+  HKT3: { name: "Hakatha 3", specialty: "Mixed showroom" },
+};
+const VEHICLES = {
+  ISUZU: { plate: "C1A5722", primaryShop: "ATL" },
+  BONGO: { plate: "C1A5722", primaryShop: "KSJ" },
+};
+// Invoice numbers look like "<prefix>/<digits>" — prefix is either a numeric
+// shop code (see PREFIX_MAP) or the letters "QT", which marks a quotation
+// rather than a real invoice. Shared everywhere an invoice number gets
+// parsed or matched so all the code agrees on what counts as one.
+const INVOICE_NUMBER_RE = /((?:QT|\d{1,3})\/\d{3,7})/i;
+function isQuotationInvoice(invoice) {
+  return /^QT/i.test(String(invoice || "").trim());
+}
+// Numeric prefixes identify which shop's register issued the invoice.
+// "QT" isn't in here on purpose — a quotation number doesn't map to a shop,
+// it just means this booking needs a real invoice added later (see
+// isQuotationInvoice / the "Add invoice" flow on the delivery card).
+const PREFIX_MAP = { "8": "KSJ", "14": "ATL", "4": "HKT3" };
+
+// Each delivery zone requires its own delivery-charge line item (by SKU) to
+// be present in the order before it can be booked — UNLESS the order's
+// product value exceeds the free-delivery threshold for that zone.
+// "Other" has no requirement at all. Source: Ewity-Product-Pricing-19-07-2026.xlsx
+// (column A = SKU, 4-digit SKUs zero-padded to 5; column D = Price with GST).
+const PRICE_MAP = {
+  "01016":12022.64, "01017":2950.0, "01018":2900.0, "01019":249.0, "01020":51.96, "01021":61.13,
+  "01022":50.94, "01023":1249.0, "01024":2489.0, "01025":3319.0, "01029":0.0, "01030":687.74,
+  "01031":0.0, "01032":1069.81, "01033":2222.15, "01034":4499.0, "01039":293.43, "01040":1379.0,
+  "01041":1449.0, "01042":1999.0, "01043":1940.0, "01046":679.0, "01047":152.83, "01048":309.0,
+  "01049":699.0, "01050":1089.0, "01051":255.0, "01052":5319.0, "01053":1499.0, "01054":1120.75,
+  "01055":703.02, "01056":183.4, "01057":3319.0, "01064":369.0, "01065":630.0, "01065xx":630.0,
+  "01066":232.2, "01066xx":232.2, "01067":305.66, "01067xx":305.66, "01068":125.4, "01068xx":125.4,
+  "01069":5399.0, "01070":0.0, "01071":589.0, "01072":669.0, "01073":2299.0, "01074":1999.0,
+  "01075":1499.0, "01076":1149.0, "01077":159.0, "01078":50.0, "01079":200.0, "01080":250.0,
+  "01081":269.0, "01082":449.0, "01083":200.0, "01084":729.0, "01085":949.0, "01086":849.0,
+  "01087":126.0, "01088":519.0, "01089":215.0, "01090":219.0, "01091":275.4, "01093":330.0,
+  "01094":290.0, "01095":290.0, "01096":419.0, "01097":639.0, "01098":434.0, "01100":1279.0,
+  "01101":1709.0, "01102":1719.0, "10001":2776.42, "10004":489.06, "10006":489.0, "10008":2656.19,
+  "10009":307.7, "10010":149.0, "10011":99.0, "10016":1049.0, "10018":99.85, "10019":524.72,
+  "10020":662.26, "10022":224.15, "10023":319.0, "10027":2949.0, "10028":6622.64, "10029":2899.0,
+  "10032":2.04, "10099":139.0, "10100":159.0, "10101":219.0, "10102":369.0, "10103":319.0,
+  "10104":449.0, "10105":769.0, "10106":859.0, "10107":815.09, "10108":1415.21, "10109":419.77,
+  "10110":849.0, "10112":369.0, "10113":339.0, "10114":549.0, "10115":169.0, "10116":258.99,
+  "10117":429.0, "10118":419.0, "10119":143.66, "10120":219.0, "10121":219.0, "10122":234.34,
+  "10123":284.26, "10124":569.0, "10125":40.75, "10126":152.83, "10127":209.0, "10130":1884.91,
+  "10131":1691.32, "10132":1986.79, "10133":1814.4, "10134":2852.83, "10135":159.0, "10136":0.0,
+  "10137":2699.0, "10138":1681.0, "10139":149.0, "10140":172.19, "10141":317.89, "10142":329.09,
+  "10143":402.45, "10144":297.51, "10145":84.57, "10146":1166.6, "10147":258.79, "10148":560.38,
+  "10149":1166.6, "10150":10988.49, "10151":8181.51, "10154":880.3, "10158":171.17, "10159":1528.3,
+  "10160":152.83, "10161":48.91, "10162":65.21, "10163":13.25, "10164":7.13, "10165":19.36,
+  "10166":16.3, "10167":17.32, "10168":3382.64, "10169":27.51, "10170":1.02, "10171":275.09,
+  "10172":318.91, "10173":135.51, "10174":1290.91, "10175":669.4, "10177":519.0, "10178":919.0,
+  "10179":1199.0, "10180":1369.0, "10181":229.0, "10185":1819.0, "10186":809.0, "10187":119.0,
+  "10188":179.0, "10189":426.91, "10190":449.0, "10191":826.3, "10192":189.0, "10193":162.0,
+  "10194":269.0, "10195":279.0, "10196":420.79, "10197":204.79, "10198":405.51, "10199":369.0,
+  "10200":270.0, "10201":523.7, "10202":361.7, "10203":1419.0, "10204":180.34, "10205":239.0,
+  "10206":319.0, "10207":469.0, "10208":712.19, "10209":949.0, "10210":719.0, "10211":499.0,
+  "10212":55.02, "10213":77.43, "10214":147.74, "10215":20.38, "10216":559.0, "10217":449.0,
+  "10218":253.7, "10219":1459.0, "10220":232.3, "10221":502.3, "10222":307.7, "10223":429.0,
+  "10224":448.3, "10229":4699.0, "10234":96.79, "10235":324.0, "10236":217.02, "10237":275.09,
+  "10238":426.91, "10239":244.53, "10268":16.3, "10269":1209.4, "10270":480.91, "10271":268.98,
+  "10272":96.79, "10273":210.91, "10274":219.0, "10276":759.06, "10278":228.23, "10279":283.25,
+  "10281":326.04, "10282":391.25, "10283":169.0, "10284":199.0, "10285":219.0, "10286":259.0,
+  "10287":159.0, "10289":229.0, "10291":339.0, "10292":419.0, "10294":579.0, "10297":219.0,
+  "10301":769.0, "10304":599.0, "10305":289.0, "10306":189.0, "10307":162.0, "10308":91.7,
+  "10309":849.0, "10310":609.0, "10311":891.51, "10313":397.36, "10314":524.72, "10315":549.17,
+  "10317":1819.7, "10318":524.72, "10319":784.53, "10320":50.94, "10321":213.96, "10322":216.72,
+  "10323":682.64, "10324":1625.09, "10325":2577.74, "10327":326.04, "10328":488.04, "10329":81.51,
+  "10330":5093.32, "10331":7799.0, "10334":1721.89, "10339":410.6, "10342":649.0, "10345":2214.0,
+  "10349":331.13, "10352":2499.0, "10353":1069.0, "10355":1959.0, "10356":1261.36, "10357":1134.0,
+  "10358":911.89, "10360":210.91, "10361":54.0, "10362":372.91, "10363":3249.0, "10364":2029.0,
+  "10365":4467.74, "10366":6999.0, "10367":1070.83, "10368":989.0, "10369":699.0, "10371":483.96,
+  "10373":951.22, "10375":389.0, "10376":199.0, "10377":109.0, "10378":329.0, "10379":749.0,
+  "10380":459.0, "10381":199.0, "10382":378.0, "10383":117.17, "10384":20.38, "10386":189.0,
+  "10780":209.0, "10781":369.0, "10782":2378.04, "10783":2015.32, "10784":2496.23, "10785":2496.23,
+  "10786":2646.0, "10787":2779.0, "10788":5244.11, "10789":1400.94, "10790":320.94,
+};
+const ZONES = [
+  { label: "Male'", sku: "01078" },
+  { label: "Hulhumale' Phase 1", sku: "01079" },
+  { label: "Hulhumale' Phase 2", sku: "01080" },
+  { label: "Other", sku: null },
+];
+// Orders above these values (MVR) get free delivery to that zone, so the
+// delivery-charge SKU isn't required.
+const FREE_DELIVERY_THRESHOLDS = {
+  "Male'": 3000,
+  "Hulhumale' Phase 1": 5000,
+  "Hulhumale' Phase 2": 5000,
+};
+function normalizeSku(sku) {
+  const s = String(sku || "").trim();
+  return /^\d{4}$/.test(s) ? "0" + s : s;
+}
+// Sum of (price × qty) for the order's items, excluding the delivery-charge
+// SKUs themselves — those are the fee being waived, not product value, so
+// they shouldn't count toward the free-delivery threshold. Items with no
+// matching SKU in PRICE_MAP contribute nothing (can't price them).
+function computeOrderValue(items) {
+  const deliveryChargeSkus = new Set(["01078", "01079", "01080"]);
+  let total = 0;
+  for (const it of (items || [])) {
+    const sku = normalizeSku(it && it.sku);
+    if (deliveryChargeSkus.has(sku)) continue;
+    const price = PRICE_MAP[sku];
+    if (price == null) continue;
+    total += price * (parseFloat(it && it.qty) || 0);
+  }
+  return total;
+}
+function zoneChargeOk(zone, items) {
+  const z = ZONES.find(zn => zn.label === zone);
+  if (!z || !z.sku) return true; // "Other" or unknown zone — no charge requirement
+  const threshold = FREE_DELIVERY_THRESHOLDS[zone];
+  if (threshold != null && computeOrderValue(items) > threshold) return true; // qualifies for free delivery
+  return (items || []).some(it => normalizeSku(it && it.sku) === z.sku);
+}
+
+// Pre-connected to your Apps Script backend — no manual setup needed on a
+// fresh device. Still overridable via "Connect sheet" if you ever redeploy
+// to a new URL; a saved override always takes priority over this default.
+const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzDDqlf3yQvFyNLvkXxXAH1VVcMeL7FnZtS6y5yOYbOxxiGf9oecfdORjQhk4a-33G_/exec";
+
+// Accepts any Google Sheets URL a person pastes in (edit link, share link,
+// etc.), pulls out the spreadsheet ID, and builds a clean embeddable URL.
+// Viewing the embed still requires the viewer's Google account to have
+// access to the sheet — embedding doesn't change sharing permissions.
+function sheetEmbedUrl(rawUrl) {
+  const match = String(rawUrl || "").match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (!match) return null;
+  return `https://docs.google.com/spreadsheets/d/${match[1]}/edit?usp=sharing&rm=minimal&widget=true&headers=false`;
+}
+
+// The connected sheet's data is fetched fresh from the backend on every load —
+// this app keeps no local copy between sessions. Only small config (the
+// backend URL, and the signed-in session) is kept in this browser via
+// localStorage, since this file runs as a plain webpage outside Claude.ai.
+
+// Sheet status text <-> the app's internal status vocabulary.
+const STATUS_TO_APP = { Pending: "scheduled", Completed: "completed", Missed: "missed", Cancelled: "cancelled" };
+function statusToSheet(status) {
+  if (status === "completed") return "Completed";
+  if (status === "missed") return "Missed";
+  return "Pending";
+}
+function bookingFromSheetRow(r) {
+  return {
+    id: String(r.row), shop: r.shop, vehicle: r.pickup, invoice: r.invoice || "",
+    items: Array.isArray(r.items) ? r.items : [],
+    date: r.date, time: r.time, location: r.location,
+    status: STATUS_TO_APP[r.status] || "scheduled",
+    bookedBy: r.bookedBy || "", confirmedBy: r.confirmedBy || "", zone: r.zone || "",
+    cancelReason: r.cancelReason || "", needsVerification: !!r.needsVerification, verificationNote: r.verificationNote || "",
+  };
+}
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+// A booking counts as "due for confirmation" once 45 minutes have passed its
+// scheduled time and no one has confirmed it yet — computed live rather than
+// stored, so it doesn't depend on anyone writing a status change at the right moment.
+function effectiveStatus(b, now) {
+  if (b.status !== "scheduled") return b.status;
+  const scheduled = new Date(`${b.date}T${b.time}:00`);
+  if (isNaN(scheduled.getTime())) return b.status;
+  return now.getTime() - scheduled.getTime() > 45 * 60 * 1000 ? "due" : "scheduled";
+}
+
+const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+function timesConflict(t1, t2, bufferMin = 60) {
+  return Math.abs(toMin(t1) - toMin(t2)) < bufferMin;
+}
+// Shop operating hours — deliveries can only be booked in these windows.
+const OPERATING_WINDOWS = [["09:00", "12:00"], ["13:30", "18:00"]];
+function isWithinOperatingHours(time) {
+  const t = toMin(time);
+  return OPERATING_WINDOWS.some(([start, end]) => t >= toMin(start) && t <= toMin(end));
+}
+function suggestSlots(date, vehicle, bookings) {
+  const taken = bookings.filter(b => b.vehicle === vehicle && b.date === date && b.status !== "completed").map(b => b.time);
+  const out = [];
+  for (const [start, end] of OPERATING_WINDOWS) {
+    for (let t = toMin(start); t <= toMin(end) && out.length < 3; t += 30) {
+      const time = `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+      if (!taken.some(existing => timesConflict(existing, time))) out.push(time);
+    }
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
+// Internal dates stay ISO (yyyy-mm-dd) for sorting/comparison; these convert
+// to/from the dd/mm/yyyy format used on screen and in the date field.
+function isoToDMY(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+function dmyToIso(dmy) {
+  const m = (dmy || "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const [, d, mo, y] = m;
+  const dd = +d, mm = +mo;
+  if (dd < 1 || dd > 31 || mm < 1 || mm > 12) return null;
+  return `${y}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
+}
+
+/* Pull the bill number + item table out of note text (either a PDF's embedded
+   text, or raw OCR output — both arrive here as one string with line breaks).
+   Not bulletproof — the confirm step always lets the manager fix it. */
+function parseNoteText(text) {
+  const lines = text.split(/\r?\n/).map(l => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+
+  // Bill number — prefer a line that actually says "Bill Number", fall back to
+  // any standalone <prefix>/<digits> pattern in the text. Recognizes "QT/..."
+  // quotation numbers the same way as real invoice numbers.
+  let invoice = "";
+  const billLine = lines.find(l => /bill\s*number/i.test(l));
+  if (billLine) {
+    const m = billLine.match(INVOICE_NUMBER_RE);
+    if (m) invoice = m[1];
+  }
+  if (!invoice) {
+    const m2 = text.match(INVOICE_NUMBER_RE);
+    if (m2) invoice = m2[1];
+  }
+
+  // Item table: rows look like "<name...> <code> <unit> <qty>", sometimes with
+  // the name wrapped onto the line(s) above instead of inline. The unit is only
+  // used here to help spot the row — it isn't kept in the output.
+  const rowRegex = /^(.*?)\s*(\d{4,6})\s+(pcs\.?|nos\.?|units?|sheets?|box(?:es)?|bags?|rolls?|kg|m|lengths?)\s+(\d+(?:\.\d+)?)\s*$/i;
+  const items = [];
+  let buffer = [];
+  let inTable = false;
+  for (const l of lines) {
+    if (!inTable) {
+      if (/product/i.test(l) && /code/i.test(l) && /quantity/i.test(l)) inTable = true;
+      continue;
+    }
+    if (/goods delivered/i.test(l) || /signature/i.test(l) || /bill\s*number/i.test(l) || /page \d+ of/i.test(l)) break;
+    const m = l.match(rowRegex);
+    if (m) {
+      const inlineName = m[1].trim();
+      const code = m[2], qty = m[4];
+      const name = inlineName || buffer.join(" ").trim();
+      if (name) items.push({ sku: code, product: name, qty });
+      buffer = [];
+    } else {
+      buffer.push(l);
+    }
+  }
+
+  if (!items.length) {
+    // No clean table found (free-form note) — fall back to a best-guess line.
+    const candidates = lines.filter(l =>
+      !(invoice && l.includes(invoice)) && l.length > 4 &&
+      !/bill\s*number|bill\s*date|tin:|tax no|mobile:/i.test(l)
+    );
+    const guess = candidates.sort((a, b) => b.length - a.length)[0];
+    if (guess) items.push({ sku: "", product: guess, qty: "" });
+  }
+
+  const shop = invoice ? (PREFIX_MAP[invoice.split("/")[0]] || "ATL") : "ATL";
+  return { invoice, items, shop };
+}
+
+/* Pulls the invoice number + item table out of a real Tax Invoice (as opposed
+   to a delivery note — parseNoteText above). Used when attaching an invoice
+   to a booking that was made off a quotation, so it can be cross-checked
+   against what's already on the booking. Looks for:
+     - the invoice number next to a "Number:" label (not the payment table's
+       unlabelled "Number" column, which has no colon)
+     - a table with "Description" / "Code" / "Quantity" column headers
+   itemsTableFound distinguishes "no table on this page" from "table found
+   but every row was unreadable" — both mean the same thing to the caller
+   (flag for review), but it's useful for the error message. */
+function parseInvoiceText(text) {
+  const lines = text.split(/\r?\n/).map(l => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+
+  let invoice = "";
+  const numberLine = lines.find(l => /^number\s*:/i.test(l));
+  if (numberLine) {
+    const m = numberLine.match(INVOICE_NUMBER_RE);
+    if (m) invoice = m[1];
+  }
+  if (!invoice) {
+    const m2 = text.match(INVOICE_NUMBER_RE);
+    if (m2) invoice = m2[1];
+  }
+
+  const rowRegex = /^(?:\d+\s+)?(.+?)\s+(\d{4,6})\s+(pcs\.?|nos\.?|units?|sheets?|box(?:es)?|bags?|rolls?|kg|m|lengths?)\s+(\d+(?:\.\d+)?)\s+.*$/i;
+  const items = [];
+  let inTable = false;
+  for (const l of lines) {
+    if (!inTable) {
+      if (/description/i.test(l) && /code/i.test(l) && /quantity/i.test(l)) inTable = true;
+      continue;
+    }
+    if (/sub\s*total|payment:|goods delivered|signature|page \d+ of/i.test(l)) break;
+    const m = l.match(rowRegex);
+    if (m) items.push({ sku: m[2], product: m[1].trim(), qty: m[4] });
+  }
+
+  return { invoice, items, itemsTableFound: inTable };
+}
+
+// Compares an already-entered booking's items against what was scanned off
+// an invoice — by SKU + quantity, order-independent. Rows without a SKU on
+// either side can't be compared, so any of those means "can't confirm this
+// matches" rather than a false pass.
+function itemsMatch(bookingItems, invoiceItems) {
+  const norm = (its) => (its || [])
+    .map(it => ({ sku: normalizeSku(it && it.sku), qty: String(parseFloat(it && it.qty) || 0) }))
+    .filter(it => it.sku)
+    .sort((a, b) => a.sku.localeCompare(b.sku));
+  const a = norm(bookingItems), b = norm(invoiceItems);
+  if (!a.length || a.length !== b.length) return false;
+  return a.every((it, i) => it.sku === b[i].sku && it.qty === b[i].qty);
+}
+
+/* ---------- shared bits ---------- */
+function ShopChip({ shop }) {
+  return <span className="inline-flex items-center px-2 py-0.5 rounded border border-[#126b39]/25 bg-[#126b39]/[0.06] text-[#0e4f2b] text-xs font-semibold">{shop}</span>;
+}
+function VehicleChip({ vehicle }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#126b39] text-white text-xs font-semibold" style={FONT_MONO}>
+      <Truck size={12} /> {vehicle}
+    </span>
+  );
+}
+function StatusBadge({ status }) {
+  const map = {
+    scheduled: { label: "Scheduled", cls: "bg-stone-100 text-stone-600 border-stone-300", Icon: Clock },
+    due: { label: "Confirm delivery", cls: "bg-[#f6ec31]/40 text-[#7a6a00] border-[#e0c400]", Icon: AlertTriangle },
+    completed: { label: "Completed", cls: "bg-[#126b39]/10 text-[#0e4f2b] border-[#126b39]/30", Icon: CheckCircle2 },
+    missed: { label: "Not delivered", cls: "bg-rose-100 text-rose-800 border-rose-300", Icon: XCircle },
+    cancelled: { label: "Cancelled", cls: "bg-stone-200 text-stone-600 border-stone-300", Icon: XCircle },
+  };
+  const m = map[status];
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-semibold ${m.cls}`}>
+      <m.Icon size={12} /> {m.label}
+    </span>
+  );
+}
+
+function DeliveryCard({ b, canAct, canEdit, isSuperAdmin, onConfirmDelivered, onConfirmMissed, onEdit, onCancel, onAddInvoice }) {
+  const [cancelling, setCancelling] = useState(false);
+  const [reason, setReason] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const canCancel = canEdit && b.status !== "completed" && b.status !== "cancelled";
+  const isQuotation = isQuotationInvoice(b.invoice);
+  const needsNewInvoice = isQuotation || !!b.verificationNote;
+  const hasMenu = canEdit && b.status !== "cancelled";
+  return (
+    <div className="flex w-full bg-white border border-[#E4DFD1] rounded-md overflow-hidden shadow-sm">
+      <div className="w-1.5" style={{ background: b.status === "cancelled" ? "#A8A29E" : "#126b39" }} />
+      <div className="flex-1 p-4">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <ShopChip shop={b.shop} />
+          <VehicleChip vehicle={b.vehicle} />
+          <span className="text-xs text-stone-500" style={FONT_MONO}>#{b.invoice}</span>
+          {isQuotation && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700 text-xs font-semibold">Quotation</span>
+          )}
+          {isSuperAdmin && b.needsVerification && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded border bg-amber-100 text-amber-800 border-amber-300 text-xs font-semibold">
+              <AlertTriangle size={12} /> Needs verification
+            </span>
+          )}
+          <div className="ml-auto flex items-center gap-2 relative">
+            {hasMenu && (
+              <button onClick={() => setMenuOpen(o => !o)} title="Options" className="text-stone-400 hover:text-[#126b39] px-1">
+                <MoreHorizontal size={16} />
+              </button>
+            )}
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-6 w-40 bg-white rounded-md shadow-lg border border-[#E4DFD1] overflow-hidden z-20">
+                  <button onClick={() => { setMenuOpen(false); onEdit(b); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-[#FAF8F1] text-left">
+                    <Pencil size={12} /> Edit
+                  </button>
+                  {needsNewInvoice && (
+                    <button onClick={() => { setMenuOpen(false); onAddInvoice(b); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-[#FAF8F1] text-left border-t border-[#EFEAD9]">
+                      <FileText size={12} /> Add invoice
+                    </button>
+                  )}
+                  {canCancel && (
+                    <button onClick={() => { setMenuOpen(false); setCancelling(true); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 text-left border-t border-[#EFEAD9]">
+                      <X size={12} /> Cancel
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+            <StatusBadge status={b.status} />
+          </div>
+        </div>
+        <div className="mb-2 space-y-1">
+          {(b.items || []).map((it, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm text-stone-800">
+              <Package size={14} className="text-stone-400 shrink-0" />
+              {it.sku && <span className="text-xs text-stone-400" style={FONT_MONO}>{it.sku}</span>}
+              <span className="font-medium">{it.product}</span>
+              {it.qty && <span className="ml-auto text-xs text-stone-500 shrink-0">×{it.qty}</span>}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-4 text-xs text-stone-500">
+          <span className="flex items-center gap-1"><Clock size={12} /> {b.time}</span>
+          <span className="flex items-center gap-1"><MapPin size={12} /> {b.location}</span>
+          <span className="flex items-center gap-1"><Calendar size={12} /> {isoToDMY(b.date)}</span>
+          {b.zone && <span className="text-stone-400">Zone: {b.zone}</span>}
+          {b.bookedBy && <span className="text-stone-400">Booked by {b.bookedBy}</span>}
+        </div>
+        {b.status === "cancelled" && b.cancelReason && (
+          <div className="mt-2 text-xs text-stone-600 bg-stone-100 border border-stone-200 rounded p-2">
+            Cancelled{b.confirmedBy ? ` by ${b.confirmedBy}` : ""}: {b.cancelReason}
+          </div>
+        )}
+        {b.verificationNote && (
+          <div className="mt-2 flex items-start gap-2 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2">
+            <AlertTriangle size={13} className="mt-0.5 shrink-0" /> {b.verificationNote}
+          </div>
+        )}
+        {b.status === "due" && canAct && (
+          <div className="mt-3 pt-3 border-t border-[#EFEAD9] flex items-center gap-2">
+            <span className="text-xs text-stone-500 mr-1">Did this delivery happen?</span>
+            <button onClick={() => onConfirmDelivered(b.id)} className="px-3 py-1.5 rounded bg-[#126b39] text-white text-xs font-semibold hover:bg-[#0e5a2f]">Yes, delivered</button>
+            <button onClick={() => onConfirmMissed(b.id)} className="px-3 py-1.5 rounded border border-rose-300 text-rose-700 text-xs font-semibold hover:bg-rose-50">Not yet</button>
+          </div>
+        )}
+        {b.status === "missed" && canEdit && (
+          <div className="mt-3 pt-3 border-t border-[#EFEAD9]">
+            <button onClick={() => onEdit(b)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#126b39] text-white text-xs font-semibold hover:bg-[#0e5a2f]">
+              <RotateCcw size={13} /> Reschedule this delivery
+            </button>
+          </div>
+        )}
+        {cancelling && (
+          <div className="mt-3 pt-3 border-t border-[#EFEAD9] space-y-2">
+            <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Reason for cancelling — required"
+              className="w-full border border-[#D9D2BC] rounded px-2 py-1.5 text-xs bg-[#FAF8F1]" />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { if (reason.trim()) { onCancel(b.id, reason.trim()); setCancelling(false); setReason(""); } }}
+                disabled={!reason.trim()}
+                className="px-3 py-1.5 rounded bg-rose-600 text-white text-xs font-semibold disabled:opacity-40">
+                Confirm cancellation
+              </button>
+              <button onClick={() => { setCancelling(false); setReason(""); }} className="px-3 py-1.5 rounded border border-[#D9D2BC] text-stone-600 text-xs font-semibold">Back</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VerifyCard({ b, onApprove, onReject }) {
+  const [rejecting, setRejecting] = useState(false);
+  const [note, setNote] = useState("");
+  return (
+    <div className="flex w-full bg-white border border-[#E4DFD1] rounded-md overflow-hidden shadow-sm mb-3 last:mb-0">
+      <div className="w-1.5" style={{ background: "#126b39" }} />
+      <div className="flex-1 p-4">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <ShopChip shop={b.shop} />
+          <VehicleChip vehicle={b.vehicle} />
+          <span className="text-xs text-stone-500" style={FONT_MONO}>#{b.invoice}</span>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded border bg-amber-100 text-amber-800 border-amber-300 text-xs font-semibold">
+            <AlertTriangle size={12} /> Needs verification
+          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <button onClick={() => onApprove(b.id)} title="Verified — looks correct"
+              className="w-5 h-5 rounded-full flex items-center justify-center bg-emerald-500 text-white hover:bg-emerald-600 shrink-0">
+              <CheckCircle2 size={12} />
+            </button>
+            <StatusBadge status={b.status} />
+          </div>
+        </div>
+        <div className="mb-2 space-y-1">
+          {(b.items || []).map((it, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm text-stone-800">
+              <Package size={14} className="text-stone-400 shrink-0" />
+              {it.sku && <span className="text-xs text-stone-400" style={FONT_MONO}>{it.sku}</span>}
+              <span className="font-medium flex-1">{it.product}</span>
+              {i === 0 && (
+                <button onClick={() => setRejecting(r => !r)} title="Reject — needs correction"
+                  className="w-5 h-5 rounded-full flex items-center justify-center bg-rose-500 text-white hover:bg-rose-600 shrink-0">
+                  <XCircle size={12} />
+                </button>
+              )}
+              {it.qty && <span className="text-xs text-stone-500 shrink-0">×{it.qty}</span>}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-4 text-xs text-stone-500">
+          <span className="flex items-center gap-1"><Clock size={12} /> {b.time}</span>
+          <span className="flex items-center gap-1"><MapPin size={12} /> {b.location}</span>
+          <span className="flex items-center gap-1"><Calendar size={12} /> {isoToDMY(b.date)}</span>
+          {b.bookedBy && <span className="text-stone-400">Booked by {b.bookedBy}</span>}
+        </div>
+        {rejecting && (
+          <div className="mt-3 pt-3 border-t border-[#EFEAD9] space-y-2">
+            <input value={note} onChange={e => setNote(e.target.value)} placeholder="Note for the requester — optional"
+              className="w-full border border-[#D9D2BC] rounded px-2 py-1.5 text-xs bg-[#FAF8F1]" />
+            <div className="flex gap-2">
+              <button onClick={() => { onReject(b.id, note.trim()); setRejecting(false); setNote(""); }}
+                className="px-3 py-1.5 rounded bg-rose-600 text-white text-xs font-semibold">Confirm rejection</button>
+              <button onClick={() => { setRejecting(false); setNote(""); }}
+                className="px-3 py-1.5 rounded border border-[#D9D2BC] text-stone-600 text-xs font-semibold">Back</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* Text input for dd/mm/yyyy entry. Keeps its own draft text while typing so
+   partial input isn't clobbered, and only reports a value up (as ISO) once
+   the text fully parses as a real date. */
+function DateField({ value, onChange, className, style }) {
+  const [text, setText] = useState(isoToDMY(value));
+  useEffect(() => { setText(isoToDMY(value)); }, [value]);
+  return (
+    <input
+      value={text}
+      placeholder="dd/mm/yyyy"
+      inputMode="numeric"
+      onChange={e => {
+        const v = e.target.value;
+        setText(v);
+        const iso = dmyToIso(v);
+        if (iso) onChange(iso);
+      }}
+      className={className}
+      style={style}
+    />
+  );
+}
+
+function SectionHeader({ n, title }) {
+  return (
+    <div className="flex items-center gap-3 px-5 py-3 bg-gradient-to-b from-[#FAF8F1] to-white border-b border-[#EFEAD9]">
+      <span className="text-lg font-bold" style={{ ...FONT_SERIF, color: "#126b39" }}>{n}</span>
+      <span className="text-sm font-semibold text-stone-800" style={FONT_SERIF}>{title}</span>
+    </div>
+  );
+}
+
+function App() {
+  const [tab, setTab] = useState("board");
+  const [bookings, setBookings] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [syncError, setSyncError] = useState(null);
+  const [now, setNow] = useState(() => new Date());
+  const [settings, setSettings] = useState({ apiUrl: "", sheetUrl: "" });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pricesOpen, setPricesOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [flagsOpen, setFlagsOpen] = useState(false);
+  const [prices, setPrices] = useState([]);
+  const [pricesLoaded, setPricesLoaded] = useState(false);
+  const [priceUpload, setPriceUpload] = useState({ error: null, busy: false });
+  const [manualSku, setManualSku] = useState("");
+  const [manualName, setManualName] = useState("");
+  const [manualPrice, setManualPrice] = useState("");
+  const [priceSearch, setPriceSearch] = useState("");
+  const [changePinOpen, setChangePinOpen] = useState(false);
+  const [currentPinInput, setCurrentPinInput] = useState("");
+  const [newPinInput, setNewPinInput] = useState("");
+  const [confirmPinInput, setConfirmPinInput] = useState("");
+  const [changePinError, setChangePinError] = useState(null);
+  const [changePinBusy, setChangePinBusy] = useState(false);
+  const [usersOpen, setUsersOpen] = useState(false);
+  const [userList, setUserList] = useState([]);
+  const [usersLoaded, setUsersLoaded] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserRole, setNewUserRole] = useState("");
+  const [newUserAccess, setNewUserAccess] = useState("user");
+  const [newUserPin, setNewUserPin] = useState("");
+  const [userMgmtError, setUserMgmtError] = useState(null);
+  const [userMgmtBusy, setUserMgmtBusy] = useState(false);
+  const [addInvoiceTarget, setAddInvoiceTarget] = useState(null);
+  const [addInvoiceValue, setAddInvoiceValue] = useState("");
+  const [addInvoiceVerified, setAddInvoiceVerified] = useState(false);
+  const [addInvoiceScanning, setAddInvoiceScanning] = useState(false);
+  const [addInvoiceBusy, setAddInvoiceBusy] = useState(false);
+  const [addInvoiceError, setAddInvoiceError] = useState(null);
+  const [apiUrlDraft, setApiUrlDraft] = useState("");
+  const [sheetUrlDraft, setSheetUrlDraft] = useState("");
+  const apiUrlRef = React.useRef("");
+  const [session, setSession] = useState(null); // { name, role, shop, token }
+  const sessionRef = React.useRef(null);
+  const [loginName, setLoginName] = useState("");
+  const [loginPin, setLoginPin] = useState("");
+  const [loginError, setLoginError] = useState(null);
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [shopFilter, setShopFilter] = useState("ALL");
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [step, setStep] = useState(1);
+  const [uploading, setUploading] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [conflict, setConflict] = useState(null);
+  const [chargeError, setChargeError] = useState(null);
+  const [invoiceError, setInvoiceError] = useState(null);
+  const [rescheduleId, setRescheduleId] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanStage, setScanStage] = useState("reading"); // "reading" | "ocr"
+  const [scanError, setScanError] = useState(null);
+  const [scanFailed, setScanFailed] = useState(false);
+  const [lastFile, setLastFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = React.useRef(null);
+  // Both roles can book/confirm now — Office accounts are executive
+  // management, not just observers. "Role" is kept for identification/
+  // display (who's who on bookings) rather than as a permission gate.
+  const canAct = !!session;
+  const isSuperAdmin = !!(session && session.shop && session.shop.trim().toLowerCase() === "superadmin");
+  // Editing an EXISTING delivery is more restricted: only whoever booked it,
+  // or a super admin, can change its details.
+  function canEditBooking(b) {
+    return !!session && (isSuperAdmin || b.bookedBy === session.name);
+  }
+
+  // The Google Sheet is the live database — every load re-fetches it fresh.
+  async function refreshBookings() {
+    const url = apiUrlRef.current;
+    const token = sessionRef.current && sessionRef.current.token;
+    if (!url || !token) { setLoaded(true); return []; }
+    try {
+      const res = await fetch(url + "?token=" + encodeURIComponent(token));
+      const data = await res.json();
+      if (!data.ok) {
+        if (data.error === "unauthorized") { clearSession(); return []; }
+        throw new Error(data.message || "error");
+      }
+      const list = (data.bookings || []).map(bookingFromSheetRow);
+      setBookings(list);
+      setSyncError(null);
+      return list;
+    } catch (e) {
+      setSyncError("Couldn't reach the Google Sheet — check the connection URL and your internet connection.");
+      return bookings;
+    } finally {
+      setLoaded(true);
+    }
+  }
+  async function apiPost(payload) {
+    const url = apiUrlRef.current;
+    if (!url) return { ok: false, error: "not_connected", message: "Connect a Google Sheet first." };
+    const token = sessionRef.current && sessionRef.current.token;
+    try {
+      const res = await fetch(url, { method: "POST", body: JSON.stringify({ ...payload, token }) });
+      const result = await res.json();
+      if (!result.ok && result.error === "unauthorized") clearSession();
+      return result;
+    } catch (e) {
+      return { ok: false, error: "network", message: "Couldn't reach the Google Sheet — check your connection." };
+    }
+  }
+  async function loadPrices() {
+    const url = apiUrlRef.current;
+    const token = sessionRef.current && sessionRef.current.token;
+    if (!url || !token) return;
+    try {
+      const res = await fetch(url + "?action=prices&token=" + encodeURIComponent(token));
+      const data = await res.json();
+      if (data.ok) setPrices(data.prices || []);
+    } catch (e) { /* leave list as-is */ }
+    setPricesLoaded(true);
+  }
+  async function addManualPrice() {
+    if (!manualSku.trim() || !manualPrice) return;
+    setPriceUpload({ error: null, busy: true });
+    const result = await apiPost({ action: "upsertPrice", sku: manualSku.trim(), name: manualName.trim(), price: manualPrice });
+    setPriceUpload({ error: result.ok ? null : (result.message || "Couldn't save that price."), busy: false });
+    if (result.ok) {
+      setManualSku(""); setManualName(""); setManualPrice("");
+      await loadPrices();
+    }
+  }
+  async function submitChangePin() {
+    setChangePinError(null);
+    if (!currentPinInput || !newPinInput) { setChangePinError("Fill in both PIN fields."); return; }
+    if (newPinInput !== confirmPinInput) { setChangePinError("New PINs don't match."); return; }
+    if (newPinInput.length < 4) { setChangePinError("New PIN must be at least 4 characters."); return; }
+    setChangePinBusy(true);
+    const result = await apiPost({ action: "changePin", currentPin: currentPinInput, newPin: newPinInput });
+    setChangePinBusy(false);
+    if (!result.ok) { setChangePinError(result.message || "Couldn't change your PIN."); return; }
+    setCurrentPinInput(""); setNewPinInput(""); setConfirmPinInput(""); setChangePinOpen(false);
+  }
+  async function loadUsers() {
+    const url = apiUrlRef.current;
+    const token = sessionRef.current && sessionRef.current.token;
+    if (!url || !token) return;
+    try {
+      const res = await fetch(url + "?action=users&token=" + encodeURIComponent(token));
+      const data = await res.json();
+      if (data.ok) setUserList(data.users || []);
+      else setUserMgmtError(data.message || "Couldn't load users.");
+    } catch (e) { /* leave list as-is */ }
+    setUsersLoaded(true);
+  }
+  async function addUser() {
+    if (!newUserName.trim() || newUserPin.length < 4) return;
+    setUserMgmtBusy(true); setUserMgmtError(null);
+    const result = await apiPost({
+      action: "addUser", name: newUserName.trim(), role: newUserRole.trim(),
+      shop: newUserAccess === "admin" ? "SuperAdmin" : "", pin: newUserPin,
+    });
+    setUserMgmtBusy(false);
+    if (!result.ok) { setUserMgmtError(result.message || "Couldn't add that user."); return; }
+    setNewUserName(""); setNewUserRole(""); setNewUserAccess("user"); setNewUserPin("");
+    await loadUsers();
+  }
+  async function removeUser(name) {
+    setUserMgmtBusy(true); setUserMgmtError(null);
+    const result = await apiPost({ action: "removeUser", name });
+    setUserMgmtBusy(false);
+    if (!result.ok) { setUserMgmtError(result.message || "Couldn't remove that user."); return; }
+    await loadUsers();
+  }
+  function clearSession() {
+    setSession(null);
+    sessionRef.current = null;
+    localStorage.removeItem("hakatha_session");
+    setBookings([]);
+  }
+  async function login() {
+    setLoginError(null);
+    if (!loginName || !loginPin) { setLoginError("Pick your name and enter your PIN."); return; }
+    setLoggingIn(true);
+    const result = await apiPost({ action: "login", name: loginName, pin: loginPin });
+    setLoggingIn(false);
+    if (!result.ok) { setLoginError(result.message || "Couldn't sign in."); return; }
+    const next = { name: result.name, role: result.role, shop: result.shop, token: result.token };
+    setSession(next);
+    sessionRef.current = next;
+    localStorage.setItem("hakatha_session", JSON.stringify(next));
+    setLoginPin("");
+  }
+  async function logout() {
+    await apiPost({ action: "logout" });
+    clearSession();
+  }
+  useEffect(() => {
+    let apiUrl = "";
+    let sheetUrl = "";
+    try {
+      const raw = localStorage.getItem("hakatha_settings");
+      if (raw) { const s = JSON.parse(raw); apiUrl = s.apiUrl || ""; sheetUrl = s.sheetUrl || ""; }
+    } catch (e) { /* no settings saved yet */ }
+    if (!apiUrl) apiUrl = DEFAULT_API_URL;
+    setSettings({ apiUrl, sheetUrl });
+    setApiUrlDraft(apiUrl);
+    setSheetUrlDraft(sheetUrl);
+    apiUrlRef.current = apiUrl;
+
+    let existingSession = null;
+    try {
+      const rawSession = localStorage.getItem("hakatha_session");
+      if (rawSession) existingSession = JSON.parse(rawSession);
+    } catch (e) { /* not signed in */ }
+    if (existingSession) { setSession(existingSession); sessionRef.current = existingSession; }
+
+    if (apiUrl && existingSession) refreshBookings();
+    else setLoaded(true);
+
+    // Skip the poll entirely while this tab isn't in front of anyone — no
+    // point re-reading the board for a screen nobody's looking at. Catch up
+    // immediately instead as soon as it's visible again.
+    const poll = setInterval(() => { if (!document.hidden) refreshBookings(); }, 20000);
+    const clock = setInterval(() => setNow(new Date()), 60000);
+    const onVisible = () => { if (!document.hidden) refreshBookings(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(poll); clearInterval(clock); document.removeEventListener("visibilitychange", onVisible); };
+  }, []);
+  function saveSettings(next) {
+    setSettings(next);
+    apiUrlRef.current = next.apiUrl || "";
+    localStorage.setItem("hakatha_settings", JSON.stringify(next));
+    refreshBookings();
+  }
+  useEffect(() => {
+    if (pricesOpen) { setPricesLoaded(false); loadPrices(); }
+  }, [pricesOpen]);
+  useEffect(() => {
+    if (usersOpen) { setUsersLoaded(false); setUserMgmtError(null); loadUsers(); }
+  }, [usersOpen]);
+
+  const grouped = useMemo(() => {
+    const list = bookings
+      .filter(b => /^\d{4}-\d{2}-\d{2}$/.test(b.date)) // guards against stray/malformed rows in the Sheet
+      .filter(b => shopFilter === "ALL" || b.shop === shopFilter)
+      .filter(b => b.status !== "completed" && b.status !== "cancelled")
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    const byDate = {};
+    list.forEach(b => { (byDate[b.date] ||= []).push(b); });
+    return byDate;
+  }, [bookings, shopFilter]);
+
+  const archived = bookings.filter(b => (b.status === "completed" || b.status === "cancelled") && /^\d{4}-\d{2}-\d{2}$/.test(b.date));
+  const flaggedBookings = bookings.filter(b => b.needsVerification);
+
+  function openWizard() {
+    setDraft(null); setConflict(null); setChargeError(null); setInvoiceError(null); setRescheduleId(null); setStep(1); setWizardOpen(true);
+    setPreview(null); setScanError(null); setScanProgress(0); setScanFailed(false); setLastFile(null);
+  }
+  function manualEntry() {
+    setUploading(false);
+    setPreview(null);
+    setScanError(null);
+    setScanFailed(false);
+    setLastFile(null);
+    setDraft({ invoice: "", items: [{ sku: "", product: "", qty: "" }], shop: "ATL", vehicle: "ISUZU", date: todayISO(), time: "", location: "", zone: "" });
+    setStep(2);
+  }
+  function updateItem(idx, field, value) {
+    setDraft(d => ({ ...d, items: d.items.map((it, i) => (i === idx ? { ...it, [field]: value } : it)) }));
+  }
+  function addItemRow() {
+    setDraft(d => ({ ...d, items: [...d.items, { sku: "", product: "", qty: "" }] }));
+  }
+  function removeItemRow(idx) {
+    setDraft(d => ({ ...d, items: d.items.filter((_, i) => i !== idx) }));
+  }
+  async function handleFile(file) {
+    if (!file) return;
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isImage && !isPdf) {
+      setScanError("That file type isn't supported. Try a photo, screenshot, or PDF of the delivery note.");
+      return;
+    }
+    setScanError(null);
+    setScanFailed(false);
+    setLastFile(file);
+    setUploading(true);
+    setScanProgress(0);
+    setScanStage("reading");
+
+    const finishWithParsed = (parsed) => {
+      setDraft({
+        invoice: parsed.invoice,
+        items: parsed.items.length ? parsed.items : [{ sku: "", product: "", qty: "" }],
+        shop: parsed.shop,
+        vehicle: parsed.shop === "KSJ" ? "BONGO" : "ISUZU",
+        date: todayISO(), time: "", location: "", zone: "",
+      });
+      if (!parsed.invoice && !parsed.items.length) {
+        setScanError("Couldn't pick out the invoice or items automatically — check and fill in the fields below.");
+      }
+      setUploading(false);
+      setStep(2);
+    };
+    const runOcr = async (ocrInput) => {
+      setScanStage("ocr");
+      const { data } = await Tesseract.recognize(ocrInput, "eng", {
+        logger: (m) => { if (m.status === "recognizing text") setScanProgress(Math.round(m.progress * 100)); },
+      });
+      finishWithParsed(parseNoteText(data.text || ""));
+    };
+
+    try {
+      if (isPdf) {
+        const [lines, canvas] = await Promise.all([pdfFirstPageTextLines(file), pdfFirstPageToCanvas(file)]);
+        setPreview(canvas.toDataURL("image/png"));
+        const textLen = lines.join(" ").trim().length;
+        if (textLen > 30) {
+          // Born-digital PDF with a real text layer — read it directly, no OCR needed.
+          finishWithParsed(parseNoteText(lines.join("\n")));
+        } else {
+          // No usable text layer (a scanned image saved as PDF) — fall back to OCR.
+          await runOcr(canvas);
+        }
+      } else {
+        setPreview(await readAsDataURL(file));
+        await runOcr(file);
+      }
+    } catch (e) {
+      // A real failure (not just "found nothing useful") — stay on step 1 and
+      // offer to retry the same file, rather than dumping the manager into a
+      // blank confirm screen.
+      setUploading(false);
+      setPreview(null);
+      setScanFailed(true);
+      setScanError(isPdf ? "Couldn't read that PDF. Try a clearer scan, or a photo instead." : "The scan failed to run.");
+    }
+  }
+  function onDrop(e) {
+    e.preventDefault(); setDragActive(false);
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    handleFile(file);
+  }
+  function goSchedule() { setConflict(null); setStep(3); }
+  async function tryBook() {
+    if (!draft.time || !draft.location || !draft.zone) return;
+    if (!isWithinOperatingHours(draft.time)) {
+      setConflict({
+        reason: "Deliveries can only be scheduled 09:00–12:00 or 13:30–18:00.",
+        suggestions: suggestSlots(draft.date, draft.vehicle, bookings),
+      });
+      return;
+    }
+    setChargeError(null);
+    setInvoiceError(null);
+    if (!zoneChargeOk(draft.zone, draft.items)) {
+      const threshold = FREE_DELIVERY_THRESHOLDS[draft.zone];
+      setChargeError(`This order doesn't meet the free-delivery minimum for ${draft.zone}. Orders need to be MVR ${threshold != null ? threshold.toLocaleString() : "0"}+ — this one's MVR ${computeOrderValue(draft.items).toLocaleString()}.`);
+      return;
+    }
+    const dupe = draft.invoice.trim() && bookings.find(b =>
+      b.id !== rescheduleId && b.status !== "cancelled" &&
+      (b.invoice || "").trim().toLowerCase() === draft.invoice.trim().toLowerCase()
+    );
+    if (dupe) {
+      setInvoiceError(`There's already a delivery booked for invoice #${draft.invoice} (${isoToDMY(dupe.date)} ${dupe.time}, ${dupe.shop}).`);
+      return;
+    }
+    if (!settings.apiUrl) { setSyncError("Connect a Google Sheet first."); return; }
+    const result = await apiPost({
+      action: rescheduleId ? "update" : "create",
+      row: rescheduleId || undefined,
+      date: draft.date, shop: draft.shop, pickup: draft.vehicle,
+      time: draft.time, location: draft.location,
+      invoice: draft.invoice, items: draft.items, zone: draft.zone,
+    });
+    // The Sheet itself checks for conflicts, the delivery-charge rule, and
+    // duplicate invoices inside a lock, so this is the real, race-free
+    // source of truth — not just a client-side check that could be bypassed.
+    if (!result.ok) {
+      if (result.error === "conflict") {
+        setConflict({ reason: result.message, suggestions: suggestSlots(draft.date, draft.vehicle, bookings) });
+      } else if (result.error === "missing_charge") {
+        setChargeError(result.message);
+      } else if (result.error === "duplicate_invoice") {
+        setInvoiceError(result.message);
+      } else {
+        setSyncError(result.message || "Couldn't save the booking — try again.");
+      }
+      return;
+    }
+    await refreshBookings();
+    setStep(4);
+  }
+  function closeWizard() { setWizardOpen(false); }
+  async function confirmDelivered(id) {
+    const result = await apiPost({ action: "updateStatus", row: Number(id), status: "Completed" });
+    if (result.ok) await refreshBookings();
+    else setSyncError(result.message || "Couldn't update that delivery — try again.");
+  }
+  async function confirmMissed(id) {
+    const result = await apiPost({ action: "updateStatus", row: Number(id), status: "Missed" });
+    if (result.ok) await refreshBookings();
+    else setSyncError(result.message || "Couldn't update that delivery — try again.");
+  }
+  async function cancelBooking(id, reason) {
+    const result = await apiPost({ action: "cancel", row: Number(id), reason });
+    if (result.ok) await refreshBookings();
+    else setSyncError(result.message || "Couldn't cancel that delivery — try again.");
+  }
+  async function verifyInvoice(id, approve, note) {
+    const result = await apiPost({ action: "verifyInvoice", row: Number(id), approve, note: note || "" });
+    if (result.ok) await refreshBookings();
+    else setSyncError(result.message || "Couldn't update verification — try again.");
+  }
+  function startAddInvoice(b) {
+    setAddInvoiceTarget(b);
+    setAddInvoiceValue("");
+    setAddInvoiceVerified(false);
+    setAddInvoiceError(null);
+  }
+  async function handleAddInvoiceFile(file) {
+    if (!file) return;
+    setAddInvoiceError(null);
+    setAddInvoiceScanning(true);
+    try {
+      const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+      let text = "";
+      if (isPdf) {
+        const lines = await pdfFirstPageTextLines(file);
+        if (lines.join(" ").trim().length > 30) {
+          text = lines.join("\n");
+        } else {
+          const canvas = await pdfFirstPageToCanvas(file);
+          const { data } = await Tesseract.recognize(canvas, "eng");
+          text = data.text || "";
+        }
+      } else {
+        const { data } = await Tesseract.recognize(file, "eng");
+        text = data.text || "";
+      }
+      const parsed = parseInvoiceText(text);
+      if (!parsed.invoice) {
+        setAddInvoiceError("Couldn't find an invoice number in that file — enter it manually below.");
+        setAddInvoiceScanning(false);
+        return;
+      }
+      setAddInvoiceValue(parsed.invoice);
+      // Cross-check the scanned invoice's items (description/code/quantity)
+      // against what's already on this booking — from the original
+      // quotation or manual entry. Only an exact SKU+qty match auto-verifies;
+      // anything else (missing table, unreadable rows, a mismatch) gets
+      // flagged for manual review, same as typing the invoice in by hand.
+      if (parsed.itemsTableFound && parsed.items.length && itemsMatch(addInvoiceTarget && addInvoiceTarget.items, parsed.items)) {
+        setAddInvoiceVerified(true);
+      } else {
+        setAddInvoiceVerified(false);
+        setAddInvoiceError(
+          !parsed.itemsTableFound || !parsed.items.length
+            ? "Found the invoice number, but couldn't read the items table on it — this will be flagged for verification."
+            : "The items on this invoice don't match what was originally entered — this will be flagged for verification."
+        );
+      }
+    } catch (e) {
+      setAddInvoiceError("Couldn't read that file — enter the invoice number manually below.");
+    }
+    setAddInvoiceScanning(false);
+  }
+  async function submitAddInvoice() {
+    if (!addInvoiceValue.trim() || !addInvoiceTarget) return;
+    setAddInvoiceBusy(true); setAddInvoiceError(null);
+    const reason = addInvoiceVerified ? "" : (addInvoiceError || "Entered manually — not confirmed against a scanned invoice.");
+    const result = await apiPost({ action: "addInvoice", row: Number(addInvoiceTarget.id), invoice: addInvoiceValue.trim(), verified: addInvoiceVerified, reason });
+    setAddInvoiceBusy(false);
+    if (!result.ok) { setAddInvoiceError(result.message || "Couldn't add that invoice."); return; }
+    setAddInvoiceTarget(null);
+    await refreshBookings();
+  }
+  function startEdit(b) {
+    setDraft({ invoice: b.invoice, items: b.items.map(it => ({ ...it })), shop: b.shop, vehicle: b.vehicle, date: b.date, time: b.time, location: b.location, zone: b.zone || "" });
+    setRescheduleId(b.id); setConflict(null); setChargeError(null); setInvoiceError(null); setStep(2); setWizardOpen(true);
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F6F3EA] flex flex-col" style={FONT_BODY}>
+      {/* Header - white, centered logo, like the PMS reference */}
+      <div className="bg-white border-b border-[#EFEAD9]">
+        <div className="max-w-5xl mx-auto px-4 pt-5 sm:pt-8 pb-4 sm:pb-6 flex flex-col items-center">
+          <img src={LOGO_SRC} alt="Hakatha Maldives" className="h-12 sm:h-20 mb-3 sm:mb-4" />
+          <div className="text-2xl sm:text-4xl font-bold text-[#126b39] text-center" style={FONT_SERIF}>Delivery Schedule</div>
+        </div>
+      </div>
+
+      {/* Toolbar - green, like the reference's control bar */}
+      <div className="bg-[#126b39]">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+          <div className="flex gap-1.5 flex-wrap">
+            {["ALL", "ATL", "KSJ", "HKT3"].map(s => (
+              <button key={s} onClick={() => setShopFilter(s)}
+                className={`px-3 py-1.5 rounded text-xs font-semibold ${shopFilter === s ? "bg-white text-[#126b39]" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                {s === "ALL" ? "All shops" : s}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1.5 ml-0 sm:ml-2">
+            <button onClick={() => setTab("board")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold ${tab === "board" ? "bg-white text-[#126b39]" : "bg-white/10 text-white hover:bg-white/20"}`}>
+              <LayoutGrid size={13} /> Board
+            </button>
+            <button onClick={() => setTab("archive")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold ${tab === "archive" ? "bg-white text-[#126b39]" : "bg-white/10 text-white hover:bg-white/20"}`}>
+              <ArchiveIcon size={13} /> Archive
+            </button>
+            {settings.sheetUrl && (
+              <button onClick={() => setTab("sheet")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold ${tab === "sheet" ? "bg-white text-[#126b39]" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                <FileText size={13} /> Sheet
+              </button>
+            )}
+          </div>
+          {session && (
+            <div className="ml-auto flex items-center gap-2">
+              {isSuperAdmin && (
+                <div className="relative">
+                  <button onClick={() => setFlagsOpen(o => !o)} title="Needs verification"
+                    className={`flex items-center justify-center w-8 h-8 rounded text-white hover:bg-white/20 ${flaggedBookings.length > 0 ? "flag-flash" : "bg-white/10"}`}>
+                    <Flag size={15} />
+                  </button>
+                  {flagsOpen && (
+                    <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50">
+                      <div className="bg-white rounded-lg w-full max-w-lg overflow-hidden relative max-h-[92vh] flex flex-col">
+                        <button onClick={() => setFlagsOpen(false)} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 z-10"><X size={18} /></button>
+                        <div className="px-5 py-3" style={{ background: "linear-gradient(to bottom, #FAF8F1, #FFFFFF)", borderBottom: "1px solid #EFEAD9" }}>
+                          <span className="text-sm font-semibold text-stone-800" style={FONT_SERIF}>Needs verification</span>
+                          <div className="text-xs text-stone-400 mt-0.5">Tick to approve, or reject with an optional note.</div>
+                        </div>
+                        <div className="p-5 overflow-y-auto">
+                          {flaggedBookings.length === 0 ? (
+                            <div className="text-center py-10 text-xs text-stone-400">Nothing to review.</div>
+                          ) : (
+                            flaggedBookings.map(b => (
+                              <VerifyCard key={b.id} b={b} onApprove={id => verifyInvoice(id, true)} onReject={(id, n) => verifyInvoice(id, false, n)} />
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="relative">
+              <button onClick={() => setUserMenuOpen(o => !o)} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-white/10 text-white hover:bg-white/20">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: settings.apiUrl ? "#7CFC9A" : "#E4B34A" }} />
+                {session.name} · {session.role}
+                <ChevronRight size={12} className="transition-transform" style={{ transform: userMenuOpen ? "rotate(90deg)" : "rotate(0deg)" }} />
+              </button>
+              {userMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
+                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-[#E4DFD1] overflow-hidden z-20">
+                  {canAct && (
+                    <button onClick={() => { setUserMenuOpen(false); openWizard(); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-stone-700 hover:bg-[#FAF8F1] text-left">
+                      <Plus size={14} /> New delivery
+                    </button>
+                  )}
+                  <button onClick={() => { setUserMenuOpen(false); setChangePinError(null); setChangePinOpen(true); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-stone-700 hover:bg-[#FAF8F1] text-left border-t border-[#EFEAD9]">
+                    <Pencil size={14} /> Change PIN
+                  </button>
+                  {isSuperAdmin && (
+                    <button onClick={() => { setUserMenuOpen(false); setPricesOpen(true); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-stone-700 hover:bg-[#FAF8F1] text-left border-t border-[#EFEAD9]">
+                      <FileText size={14} /> Price changes
+                    </button>
+                  )}
+                  {isSuperAdmin && (
+                    <button onClick={() => { setUserMenuOpen(false); setUsersOpen(true); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-stone-700 hover:bg-[#FAF8F1] text-left border-t border-[#EFEAD9]">
+                      <FileText size={14} /> Manage users
+                    </button>
+                  )}
+                  {isSuperAdmin && (
+                    <button onClick={() => { setUserMenuOpen(false); setSettingsOpen(true); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-stone-700 hover:bg-[#FAF8F1] text-left border-t border-[#EFEAD9]">
+                      <FileText size={14} /> Connection settings
+                    </button>
+                  )}
+                  <button onClick={() => { setUserMenuOpen(false); logout(); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-rose-700 hover:bg-rose-50 text-left border-t border-[#EFEAD9]">
+                    <X size={14} /> Log out
+                  </button>
+                  </div>
+                </>
+              )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {settingsOpen && (
+        <div className="max-w-5xl mx-auto px-4 pt-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wide">Connection settings</span>
+            <button onClick={() => setSettingsOpen(false)} className="text-stone-400 hover:text-stone-700"><X size={16} /></button>
+          </div>
+          <div className="bg-white border border-[#E4DFD1] rounded-md p-4">
+            <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Google Apps Script Web App URL</label>
+            <div className="flex gap-2 mt-1">
+              <input value={apiUrlDraft} onChange={e => setApiUrlDraft(e.target.value)} placeholder="https://script.google.com/macros/s/.../exec"
+                className="flex-1 border border-[#D9D2BC] rounded px-3 py-2 text-sm bg-[#FAF8F1]" style={FONT_MONO} />
+              <button onClick={() => saveSettings({ ...settings, apiUrl: apiUrlDraft.trim() })}
+                className="px-3 py-2 rounded text-white text-xs font-semibold" style={{ background: "#126b39" }}>Connect</button>
+            </div>
+            <div className="text-xs text-stone-400 mt-2">Shared across everyone using this app — set it once. Get this URL by deploying the Apps Script backend as a Web App.</div>
+          </div>
+          <div className="bg-white border border-[#E4DFD1] rounded-md p-4">
+            <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Google Sheet link (for the Sheet tab)</label>
+            <div className="flex gap-2 mt-1">
+              <input value={sheetUrlDraft} onChange={e => setSheetUrlDraft(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/.../edit"
+                className="flex-1 border border-[#D9D2BC] rounded px-3 py-2 text-sm bg-[#FAF8F1]" style={FONT_MONO} />
+              <button onClick={() => saveSettings({ ...settings, sheetUrl: sheetUrlDraft.trim() })}
+                className="px-3 py-2 rounded text-white text-xs font-semibold" style={{ background: "#126b39" }}>Save</button>
+            </div>
+            <div className="text-xs text-stone-400 mt-2">Paste the normal share/edit link — viewers still need their own Google access to the sheet.</div>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full max-w-5xl mx-auto px-4 py-6 flex-1">
+        {syncError && (
+          <div className="flex items-center gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded p-2.5 mb-4">
+            <AlertTriangle size={14} className="shrink-0" /> {syncError}
+          </div>
+        )}
+        {!loaded ? (
+          <div className="text-center py-16 text-stone-400 text-sm">Loading…</div>
+        ) : !settings.apiUrl ? (
+          <div className="text-center py-16 max-w-sm mx-auto">
+            <div className="text-base font-bold text-stone-700 mb-1" style={FONT_SERIF}>Connect your Google Sheet</div>
+            <div className="text-sm text-stone-500 mb-4">Every delivery lives in your Sheet — connect it to start booking.</div>
+            <button onClick={() => setSettingsOpen(true)} className="px-4 py-2 rounded text-white text-sm font-semibold" style={{ background: "#126b39" }}>Connect now</button>
+          </div>
+        ) : !session ? (
+          <div className="max-w-xs mx-auto py-10">
+            <div className="text-base font-bold text-stone-700 mb-1 text-center" style={FONT_SERIF}>Sign in</div>
+            <div className="text-sm text-stone-500 mb-5 text-center">Enter your name and PIN.</div>
+            <div className="bg-white border border-[#E4DFD1] rounded-md p-5 space-y-3">
+              <div>
+                <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Name</label>
+                <input value={loginName} onChange={e => setLoginName(e.target.value)} placeholder="Your name" className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">PIN</label>
+                <input value={loginPin} onChange={e => setLoginPin(e.target.value)} type="password" inputMode="numeric" placeholder="••••"
+                  onKeyDown={e => e.key === "Enter" && login()}
+                  className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" style={FONT_MONO} />
+              </div>
+              {loginError && <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">{loginError}</div>}
+              <button onClick={login} disabled={loggingIn} className="w-full text-white text-sm font-semibold rounded py-2.5 disabled:opacity-50" style={{ background: "#126b39" }}>
+                {loggingIn ? "Signing in…" : "Sign in"}
+              </button>
+            </div>
+          </div>
+        ) : tab === "board" && (
+          <>
+            {Object.keys(grouped).length === 0 && <div className="text-center py-16 text-stone-400 text-sm">No Pending Deliveries</div>}
+            {Object.entries(grouped).map(([date, items]) => (
+              <div key={date} className="mb-6">
+                <div className="text-base font-bold tracking-wide text-stone-600 mb-2" style={FONT_MONO}>{isoToDMY(date)}</div>
+                <div className="space-y-3">
+                  {items.map(b => <DeliveryCard key={b.id} b={{ ...b, status: effectiveStatus(b, now) }} canAct={canAct} canEdit={canEditBooking(b)} isSuperAdmin={isSuperAdmin} onConfirmDelivered={confirmDelivered} onConfirmMissed={confirmMissed} onEdit={startEdit} onCancel={cancelBooking} onAddInvoice={startAddInvoice} />)}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {loaded && settings.apiUrl && session && tab === "archive" && (
+          <div>
+            <div className="text-xs text-stone-500 mb-4">Every completed delivery lives in your connected Google Sheet — this is a live view of it.</div>
+            {archived.length === 0 ? (
+              <div className="text-center py-16 text-stone-400 text-sm">No completed deliveries yet.</div>
+            ) : (
+              <div className="bg-white border border-[#E4DFD1] rounded-md overflow-x-auto">
+                <table className="w-full text-sm min-w-[720px]">
+                  <thead className="bg-[#FAF8F1] text-stone-600 text-xs uppercase">
+                    <tr><th className="text-left px-3 py-2">Shop</th><th className="text-left px-3 py-2">Invoice</th><th className="text-left px-3 py-2">Items</th><th className="text-left px-3 py-2">Vehicle</th><th className="text-left px-3 py-2">Date</th><th className="text-left px-3 py-2">Location</th><th className="text-left px-3 py-2">Status</th><th className="text-left px-3 py-2">Notes</th></tr>
+                  </thead>
+                  <tbody>
+                    {archived.map(b => (
+                      <tr key={b.id} className="border-t border-[#EFEAD9]">
+                        <td className="px-3 py-2"><ShopChip shop={b.shop} /></td>
+                        <td className="px-3 py-2" style={FONT_MONO}>{b.invoice}</td>
+                        <td className="px-3 py-2">{(b.items || []).map(it => `${it.product}${it.qty ? ` ×${it.qty}` : ""}`).join("; ")}</td>
+                        <td className="px-3 py-2">{b.vehicle}</td>
+                        <td className="px-3 py-2">{isoToDMY(b.date)}</td>
+                        <td className="px-3 py-2">{b.location}</td>
+                        <td className="px-3 py-2"><StatusBadge status={b.status} /></td>
+                        <td className="px-3 py-2 text-stone-500">
+                          {b.status === "cancelled"
+                            ? `${b.confirmedBy || "—"}${b.cancelReason ? `: ${b.cancelReason}` : ""}`
+                            : (b.confirmedBy || "—")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {loaded && settings.apiUrl && session && tab === "sheet" && (
+          <div>
+            {sheetEmbedUrl(settings.sheetUrl) ? (
+              <iframe
+                src={sheetEmbedUrl(settings.sheetUrl)}
+                className="w-full rounded-md border border-[#E4DFD1]"
+                style={{ height: "75vh" }}
+                title="Google Sheet"
+              />
+            ) : (
+              <div className="text-center py-16 max-w-sm mx-auto">
+                <div className="text-sm text-stone-500 mb-4">No Google Sheet link is set up yet.</div>
+                <button onClick={() => setSettingsOpen(true)} className="px-4 py-2 rounded text-white text-sm font-semibold" style={{ background: "#126b39" }}>Add a Sheet link</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 pb-4 text-xs text-stone-400" style={FONT_MONO}>Project Mercury 3.0</div>
+
+      {/* Wizard modal - numbered-card style matching the reference */}
+      {wizardOpen && (
+        <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-lg overflow-hidden relative max-h-[92vh] flex flex-col">
+            <button onClick={closeWizard} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 z-10"><X size={18} /></button>
+            <SectionHeader n={step} title={
+              step === 1 ? "Upload delivery note" : step === 2 ? "Confirm details" : step === 3 ? (rescheduleId ? "Edit delivery" : "Schedule delivery") : "Booked"
+            } />
+            <div className="p-6 overflow-y-auto">
+
+            {step === 1 && (
+              <div>
+                <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
+                  onChange={e => handleFile(e.target.files && e.target.files[0])} />
+                <div
+                  onClick={() => !uploading && fileInputRef.current && fileInputRef.current.click()}
+                  onDragOver={e => { e.preventDefault(); setDragActive(true); }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={onDrop}
+                  className="rounded-md p-8 text-center mb-3 cursor-pointer transition-colors"
+                  style={{
+                    border: `2px dashed ${scanFailed ? "#fca5a5" : dragActive ? "#126b39" : "#D9D2BC"}`,
+                    background: dragActive ? "#126b39" + "0D" : "#FAF8F1",
+                  }}
+                >
+                  {uploading ? (
+                    <div>
+                      {scanStage === "ocr" ? (
+                        <>
+                          <div className="text-sm text-stone-600 mb-2">Scanning note… {scanProgress}%</div>
+                          <div className="w-full h-1.5 bg-stone-200 rounded overflow-hidden mx-auto max-w-xs">
+                            <div className="h-full transition-all" style={{ width: `${scanProgress}%`, background: "#126b39" }} />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-stone-600">Reading note…</div>
+                      )}
+                    </div>
+                  ) : scanFailed ? (
+                    <div>
+                      <AlertTriangle className="mx-auto mb-2 text-rose-500" size={28} />
+                      <div className="text-sm text-stone-700 font-medium mb-1">Couldn't read that file</div>
+                      <div className="text-xs text-stone-500 mb-3">{scanError}</div>
+                      <button onClick={e => { e.stopPropagation(); handleFile(lastFile); }}
+                        className="px-4 py-1.5 rounded text-white text-xs font-semibold" style={{ background: "#126b39" }}>
+                        Retry
+                      </button>
+                      <div className="text-xs text-stone-400 mt-2">or click / drop to try a different file</div>
+                    </div>
+                  ) : preview ? (
+                    <div className="flex flex-col items-center">
+                      <img src={preview} alt="Delivery note preview" className="max-h-32 rounded border border-[#E4DFD1] mb-2" />
+                      <div className="text-xs text-stone-500">Click or drop to scan a different note</div>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="mx-auto mb-2 text-[#126b39]" size={28} />
+                      <div className="text-sm text-stone-600 mb-1">Drop a photo or PDF of the delivery note here</div>
+                      <div className="text-xs text-stone-400">or click to choose a file — JPG, PNG or PDF</div>
+                    </>
+                  )}
+                </div>
+                {scanError && !scanFailed && (
+                  <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded p-2.5 mb-3">
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {scanError}
+                  </div>
+                )}
+                <div className="text-xs text-stone-400 mb-4">PDFs: only page 1 is scanned.</div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-1 h-px bg-[#EFEAD9]" />
+                  <span className="text-xs text-stone-400 uppercase tracking-wide font-semibold">or</span>
+                  <div className="flex-1 h-px bg-[#EFEAD9]" />
+                </div>
+                <button onClick={manualEntry} className="w-full flex items-center justify-center gap-1.5 border rounded p-2.5 text-sm font-semibold hover:bg-[#126b39]/5" style={{ borderColor: "#D9D2BC", color: "#126b39" }}>
+                  <FileText size={14} /> Manual Entry
+                </button>
+              </div>
+            )}
+
+            {step === 2 && draft && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Invoice</label>
+                  <input value={draft.invoice} onChange={e => setDraft({ ...draft, invoice: e.target.value })} className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1] focus:outline-none focus:ring-2 focus:ring-[#126b39]/30" style={FONT_MONO} />
+                  {isQuotationInvoice(draft.invoice) && (
+                    <div className="text-xs text-amber-700 mt-1">Looks like a quotation, not an invoice — you'll be able to attach the real invoice once it's ready.</div>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Items</label>
+                  <div className="grid mt-1 mb-1 gap-2 px-1 text-[10px] font-bold text-stone-400 uppercase tracking-wide" style={{ gridTemplateColumns: "80px 1fr 64px 24px" }}>
+                    <div>SKU</div><div>Product</div><div>Qty</div><div></div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {draft.items.map((it, idx) => (
+                      <div key={idx} className="grid gap-2 items-center" style={{ gridTemplateColumns: "80px 1fr 64px 24px" }}>
+                        <input value={it.sku} onChange={e => updateItem(idx, "sku", e.target.value)} placeholder="—"
+                          className="border rounded px-2 py-1.5 text-xs bg-[#FAF8F1] focus:outline-none focus:ring-2 focus:ring-[#126b39]/30" style={{ borderColor: "#D9D2BC", ...FONT_MONO }} />
+                        <input value={it.product} onChange={e => updateItem(idx, "product", e.target.value)} placeholder="Product name"
+                          className="border rounded px-2 py-1.5 text-sm bg-[#FAF8F1] focus:outline-none focus:ring-2 focus:ring-[#126b39]/30" style={{ borderColor: "#D9D2BC" }} />
+                        <input value={it.qty} onChange={e => updateItem(idx, "qty", e.target.value)} placeholder="0"
+                          className="border rounded px-2 py-1.5 text-sm bg-[#FAF8F1] focus:outline-none focus:ring-2 focus:ring-[#126b39]/30" style={{ borderColor: "#D9D2BC" }} />
+                        <button onClick={() => removeItemRow(idx)} disabled={draft.items.length === 1}
+                          className="text-stone-400 hover:text-rose-600 disabled:opacity-30 flex justify-center"><X size={14} /></button>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={addItemRow} className="mt-2 text-xs font-semibold" style={{ color: "#126b39" }}>+ Add item</button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Shop</label>
+                    <select value={draft.shop} onChange={e => setDraft({ ...draft, shop: e.target.value })} className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]">
+                      {Object.keys(SHOPS).map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Pickup vehicle</label>
+                    <select value={draft.vehicle} onChange={e => setDraft({ ...draft, vehicle: e.target.value })} className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]">
+                      {Object.keys(VEHICLES).map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="text-xs text-stone-400 italic">Shop and vehicle are guessed from the invoice prefix — check they're right before continuing.</div>
+                <button onClick={goSchedule} className="w-full mt-2 bg-[#126b39] hover:bg-[#0e5a2f] text-white text-sm font-semibold rounded py-2.5 flex items-center justify-center gap-1">
+                  Looks right, continue <ChevronRight size={15} />
+                </button>
+              </div>
+            )}
+
+            {step === 3 && draft && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Date</label>
+                    <DateField value={draft.date} onChange={iso => setDraft({ ...draft, date: iso })} className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Time</label>
+                    <input type="time" value={draft.time} onChange={e => setDraft({ ...draft, time: e.target.value })} className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" />
+                  </div>
+                </div>
+                <div className="text-xs text-stone-400 -mt-2">Operating hours: 09:00–12:00 and 13:30–18:00</div>
+                <div>
+                  <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Location</label>
+                  <input value={draft.location} onChange={e => setDraft({ ...draft, location: e.target.value })} placeholder="e.g. North Harbor" className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Delivery Zone</label>
+                  <select value={draft.zone} onChange={e => { setDraft({ ...draft, zone: e.target.value }); setChargeError(null); }} className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]">
+                    <option value="">— Select zone —</option>
+                    {ZONES.map(z => <option key={z.label} value={z.label}>{z.label}</option>)}
+                  </select>
+                  {draft.zone && FREE_DELIVERY_THRESHOLDS[draft.zone] != null ? (
+                    <div className="text-xs text-stone-500 mt-1">
+                      Order value: MVR {computeOrderValue(draft.items).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {" — needs MVR " + FREE_DELIVERY_THRESHOLDS[draft.zone].toLocaleString() + "+ for free delivery here"}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-stone-400 mt-1">Male'/Hulhumale' deliveries need their delivery-charge SKU in the items list, unless the order qualifies for free delivery.</div>
+                  )}
+                </div>
+                {chargeError && (
+                  <div className="flex items-start gap-2 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2.5">
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {chargeError}
+                  </div>
+                )}
+                {invoiceError && (
+                  <div className="flex items-start gap-2 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2.5">
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {invoiceError}
+                  </div>
+                )}
+                {conflict && (
+                  <div className="bg-rose-50 border border-rose-200 rounded p-3">
+                    <div className="flex items-start gap-2 text-rose-800 text-xs font-semibold mb-2"><AlertTriangle size={14} className="mt-0.5 shrink-0" /> Slot not available</div>
+                    <div className="text-xs text-rose-700 mb-2">{conflict.reason}</div>
+                    <div className="text-xs text-rose-700 mb-1.5">Try one of these instead:</div>
+                    <div className="flex gap-2 flex-wrap">
+                      {conflict.suggestions.map(s => (
+                        <button key={s} onClick={() => { setDraft({ ...draft, time: s }); setConflict(null); }} className="px-2.5 py-1 rounded bg-white border border-rose-300 text-rose-700 text-xs font-semibold hover:bg-rose-100">{s}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button onClick={tryBook} disabled={!draft.time || !draft.location || !draft.zone} className="w-full mt-1 bg-[#f6ec31] hover:bg-[#eee02a] disabled:opacity-40 text-[#0e4f2b] text-sm font-bold rounded py-2.5 flex items-center justify-center gap-1.5">
+                  <CheckCircle2 size={16} /> Check availability &amp; book
+                </button>
+              </div>
+            )}
+
+            {step === 4 && draft && (
+              <div className="text-center py-4">
+                <CheckCircle2 className="mx-auto mb-3 text-[#126b39]" size={36} />
+                <div className="font-bold text-stone-800 mb-1" style={FONT_SERIF}>Booked</div>
+                <div className="text-sm text-stone-500 mb-4">{draft.vehicle} · {draft.date} at {draft.time} · {draft.location}</div>
+                <button onClick={closeWizard} className="bg-[#126b39] hover:bg-[#0e5a2f] text-white text-sm font-semibold rounded px-5 py-2.5">Done</button>
+              </div>
+            )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prices modal — super admin only */}
+      {pricesOpen && (
+        <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl overflow-hidden relative max-h-[92vh] flex flex-col">
+            <button onClick={() => setPricesOpen(false)} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 z-10"><X size={18} /></button>
+            <div className="px-5 py-3" style={{ background: "linear-gradient(to bottom, #FAF8F1, #FFFFFF)", borderBottom: "1px solid #EFEAD9" }}>
+              <span className="text-sm font-semibold text-stone-800" style={FONT_SERIF}>Product Prices</span>
+              <div className="text-xs text-stone-400 mt-0.5">Used to work out free-delivery eligibility. Super admin only.</div>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-5">
+
+              <div>
+                <div className="text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Add or update one product</div>
+                <div className="grid gap-2" style={{ gridTemplateColumns: "100px 1fr 100px auto" }}>
+                  <input value={manualSku} onChange={e => setManualSku(e.target.value)} placeholder="SKU" className="border rounded px-2 py-1.5 text-xs bg-[#FAF8F1]" style={{ borderColor: "#D9D2BC", ...FONT_MONO }} />
+                  <input value={manualName} onChange={e => setManualName(e.target.value)} placeholder="Product name" className="border rounded px-2 py-1.5 text-sm bg-[#FAF8F1]" style={{ borderColor: "#D9D2BC" }} />
+                  <input value={manualPrice} onChange={e => setManualPrice(e.target.value)} placeholder="Price" className="border rounded px-2 py-1.5 text-sm bg-[#FAF8F1]" style={{ borderColor: "#D9D2BC" }} />
+                  <button onClick={addManualPrice} disabled={priceUpload.busy || !manualSku.trim() || !manualPrice}
+                    className="px-3 py-1.5 rounded text-white text-xs font-semibold disabled:opacity-40" style={{ background: "#126b39" }}>Save</button>
+                </div>
+              </div>
+
+              {priceUpload.error && (
+                <div className="flex items-start gap-2 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2.5">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {priceUpload.error}
+                </div>
+              )}
+              {priceUpload.busy && <div className="text-xs text-stone-500">Saving…</div>}
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold text-stone-500 uppercase tracking-wide">Current prices ({prices.length})</div>
+                  <input value={priceSearch} onChange={e => setPriceSearch(e.target.value)} placeholder="Search SKU or name…"
+                    className="border rounded px-2 py-1 text-xs bg-[#FAF8F1]" style={{ borderColor: "#D9D2BC" }} />
+                </div>
+                {!pricesLoaded ? (
+                  <div className="text-xs text-stone-400">Loading…</div>
+                ) : (
+                  <div className="border border-[#E4DFD1] rounded-md overflow-y-auto" style={{ maxHeight: "240px" }}>
+                    <table className="w-full text-xs">
+                      <thead className="bg-[#FAF8F1] text-stone-500 uppercase sticky top-0">
+                        <tr><th className="text-left px-2 py-1.5">SKU</th><th className="text-left px-2 py-1.5">Name</th><th className="text-right px-2 py-1.5">Price</th></tr>
+                      </thead>
+                      <tbody>
+                        {prices
+                          .filter(p => !priceSearch.trim() || p.sku.includes(priceSearch.trim()) || p.name.toLowerCase().includes(priceSearch.trim().toLowerCase()))
+                          .map(p => (
+                            <tr key={p.sku} className="border-t border-[#EFEAD9] hover:bg-[#FAF8F1] cursor-pointer"
+                              onClick={() => { setManualSku(p.sku); setManualName(p.name); setManualPrice(String(p.price)); }}>
+                              <td className="px-2 py-1.5" style={FONT_MONO}>{p.sku}</td>
+                              <td className="px-2 py-1.5">{p.name}</td>
+                              <td className="px-2 py-1.5 text-right">{p.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="text-xs text-stone-400 mt-1">Click a row to load it into the form above for editing.</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Invoice modal — attaches a real invoice to a booking made off a quotation */}
+      {addInvoiceTarget && (
+        <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-sm overflow-hidden relative">
+            <button onClick={() => setAddInvoiceTarget(null)} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 z-10"><X size={18} /></button>
+            <div className="px-5 py-3" style={{ background: "linear-gradient(to bottom, #FAF8F1, #FFFFFF)", borderBottom: "1px solid #EFEAD9" }}>
+              <span className="text-sm font-semibold text-stone-800" style={FONT_SERIF}>Add Invoice</span>
+              <div className="text-xs text-stone-400 mt-0.5">For #{addInvoiceTarget.invoice} — items should match the original quotation.</div>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Scan the invoice or delivery note</label>
+                <input type="file" accept="image/*,application/pdf" onChange={e => handleAddInvoiceFile(e.target.files && e.target.files[0])}
+                  disabled={addInvoiceScanning} className="text-xs mt-1 block" />
+                {addInvoiceScanning && <div className="text-xs text-stone-500 mt-1">Reading…</div>}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-[#EFEAD9]" />
+                <span className="text-xs text-stone-400 uppercase tracking-wide font-semibold">or enter manually</span>
+                <div className="flex-1 h-px bg-[#EFEAD9]" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Invoice number</label>
+                <input value={addInvoiceValue} onChange={e => { setAddInvoiceValue(e.target.value); setAddInvoiceVerified(false); setAddInvoiceError(null); }} placeholder="e.g. 14/012700"
+                  className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" style={FONT_MONO} />
+                {addInvoiceVerified && addInvoiceValue.trim() && (
+                  <div className="text-xs text-emerald-700 mt-1">Matches the original order — verified automatically.</div>
+                )}
+                {!addInvoiceVerified && addInvoiceValue.trim() && !addInvoiceError && (
+                  <div className="text-xs text-amber-700 mt-1">Typed manually — this will be flagged for verification.</div>
+                )}
+              </div>
+              {addInvoiceError && <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">{addInvoiceError}</div>}
+              <button onClick={submitAddInvoice} disabled={addInvoiceBusy || !addInvoiceValue.trim()} className="w-full text-white text-sm font-semibold rounded py-2.5 disabled:opacity-50" style={{ background: "#126b39" }}>
+                {addInvoiceBusy ? "Saving…" : "Save invoice"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change PIN modal — any signed-in user */}
+      {changePinOpen && (
+        <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-xs overflow-hidden relative">
+            <button onClick={() => setChangePinOpen(false)} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 z-10"><X size={18} /></button>
+            <div className="px-5 py-3" style={{ background: "linear-gradient(to bottom, #FAF8F1, #FFFFFF)", borderBottom: "1px solid #EFEAD9" }}>
+              <span className="text-sm font-semibold text-stone-800" style={FONT_SERIF}>Change PIN</span>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Current PIN</label>
+                <input type="password" inputMode="numeric" value={currentPinInput} onChange={e => setCurrentPinInput(e.target.value)}
+                  className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" style={FONT_MONO} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">New PIN</label>
+                <input type="password" inputMode="numeric" value={newPinInput} onChange={e => setNewPinInput(e.target.value)}
+                  className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" style={FONT_MONO} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Confirm new PIN</label>
+                <input type="password" inputMode="numeric" value={confirmPinInput} onChange={e => setConfirmPinInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && submitChangePin()}
+                  className="w-full border border-[#D9D2BC] rounded px-3 py-2 text-sm mt-1 bg-[#FAF8F1]" style={FONT_MONO} />
+              </div>
+              {changePinError && <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">{changePinError}</div>}
+              <button onClick={submitChangePin} disabled={changePinBusy} className="w-full text-white text-sm font-semibold rounded py-2.5 disabled:opacity-50" style={{ background: "#126b39" }}>
+                {changePinBusy ? "Saving…" : "Save new PIN"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage users modal — super admin only */}
+      {usersOpen && (
+        <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-lg overflow-hidden relative max-h-[92vh] flex flex-col">
+            <button onClick={() => setUsersOpen(false)} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 z-10"><X size={18} /></button>
+            <div className="px-5 py-3" style={{ background: "linear-gradient(to bottom, #FAF8F1, #FFFFFF)", borderBottom: "1px solid #EFEAD9" }}>
+              <span className="text-sm font-semibold text-stone-800" style={FONT_SERIF}>Manage Users</span>
+              <div className="text-xs text-stone-400 mt-0.5">Super admin only.</div>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-5">
+
+              <div>
+                <div className="text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Add a user</div>
+                <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                  <input value={newUserName} onChange={e => setNewUserName(e.target.value)} placeholder="Name" className="border rounded px-2 py-1.5 text-sm bg-[#FAF8F1]" style={{ borderColor: "#D9D2BC" }} />
+                  <input value={newUserRole} onChange={e => setNewUserRole(e.target.value)} placeholder="Role / job title" className="border rounded px-2 py-1.5 text-sm bg-[#FAF8F1]" style={{ borderColor: "#D9D2BC" }} />
+                </div>
+                <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 100px auto" }}>
+                  <select value={newUserAccess} onChange={e => setNewUserAccess(e.target.value)} className="border rounded px-2 py-1.5 text-sm bg-[#FAF8F1]" style={{ borderColor: "#D9D2BC" }}>
+                    <option value="user">Regular user</option>
+                    <option value="admin">Super admin</option>
+                  </select>
+                  <input value={newUserPin} onChange={e => setNewUserPin(e.target.value)} placeholder="PIN" inputMode="numeric" className="border rounded px-2 py-1.5 text-sm bg-[#FAF8F1]" style={{ borderColor: "#D9D2BC", ...FONT_MONO }} />
+                  <button onClick={addUser} disabled={userMgmtBusy || !newUserName.trim() || newUserPin.length < 4}
+                    className="px-3 py-1.5 rounded text-white text-xs font-semibold disabled:opacity-40" style={{ background: "#126b39" }}>Add</button>
+                </div>
+              </div>
+
+              {userMgmtError && (
+                <div className="flex items-start gap-2 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2.5">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {userMgmtError}
+                </div>
+              )}
+              {userMgmtBusy && <div className="text-xs text-stone-500">Saving…</div>}
+
+              <div>
+                <div className="text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Current users ({userList.length})</div>
+                {!usersLoaded ? (
+                  <div className="text-xs text-stone-400">Loading…</div>
+                ) : (
+                  <div className="border border-[#E4DFD1] rounded-md overflow-y-auto" style={{ maxHeight: "280px" }}>
+                    <table className="w-full text-xs">
+                      <thead className="bg-[#FAF8F1] text-stone-500 uppercase sticky top-0">
+                        <tr><th className="text-left px-2 py-1.5">Name</th><th className="text-left px-2 py-1.5">Role</th><th className="text-left px-2 py-1.5">Access</th><th></th></tr>
+                      </thead>
+                      <tbody>
+                        {userList.map(u => (
+                          <tr key={u.name} className="border-t border-[#EFEAD9]">
+                            <td className="px-2 py-1.5">{u.name}</td>
+                            <td className="px-2 py-1.5 text-stone-500">{u.role || "—"}</td>
+                            <td className="px-2 py-1.5">
+                              {u.shop && u.shop.trim().toLowerCase() === "superadmin"
+                                ? <span className="text-xs font-semibold" style={{ color: "#126b39" }}>Super admin</span>
+                                : <span className="text-xs text-stone-400">Regular</span>}
+                            </td>
+                            <td className="px-2 py-1.5 text-right">
+                              {u.name !== session?.name && (
+                                <button onClick={() => removeUser(u.name)} disabled={userMgmtBusy} className="text-xs font-semibold text-rose-600 hover:text-rose-700 disabled:opacity-40">Remove</button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
